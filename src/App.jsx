@@ -302,14 +302,36 @@ export default function App() {
     showToast('🎉 Welcome to Pro! All features unlocked.')
   }
 
-  const handleImport = () => {
+const handleImport = async () => {
     if (!zillowUrl.trim()) return
     setImporting(true)
-    setTimeout(() => {
-      setFields(f => ({ ...f, price:130000, rent:1400, address:'5200 McCallister St, Milton, FL 32583', zip:'32583', neighborhood:'Milton', taxes:120 }))
+    try {
+      const address = prompt('Enter the property address (e.g. 5200 McCallister St, Milton, FL 32583):')
+      if (!address) { setImporting(false); return }
+      const encoded = encodeURIComponent(address)
+      const apiKey = import.meta.env.VITE_RENTCAST_API_KEY
+      const [propRes, rentRes] = await Promise.all([
+        fetch(`https://api.rentcast.io/v1/properties?address=${encoded}&limit=1`, { headers: { 'X-Api-Key': apiKey } }),
+        fetch(`https://api.rentcast.io/v1/avm/rent/long-term?address=${encoded}`, { headers: { 'X-Api-Key': apiKey } })
+      ])
+      const propData = await propRes.json()
+      const rentData = await rentRes.json()
+      const prop = propData[0] || {}
+      setFields(f => ({
+        ...f,
+        address: prop.formattedAddress || address,
+        zip: prop.zipCode || f.zip,
+        neighborhood: prop.city || f.neighborhood,
+        price: prop.price || prop.assessedValue || f.price,
+        rent: rentData.rent || f.rent,
+        taxes: prop.propertyTaxes ? Math.round(prop.propertyTaxes / 12) : f.taxes,
+      }))
+      showToast(`Imported: ${[prop.formattedAddress && 'Address', rentData.rent && 'Rent estimate', prop.price && 'Price', prop.propertyTaxes && 'Taxes'].filter(Boolean).join(', ')}`)
+    } catch (err) {
+      showToast('Could not fetch property data. Please enter manually.', 'error')
+    } finally {
       setImporting(false)
-      showToast('Imported: Purchase price, monthly rent, address, zip, taxes')
-    }, 1400)
+    }
   }
 
   const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
