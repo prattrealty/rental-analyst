@@ -18,8 +18,8 @@ function calcMetrics(f) {
   const price = f.price || 0
   const down = price * (f.downPct / 100)
   const closing = price * (f.closingPct / 100)
-  const totalCashIn = down + closing + f.reno
-  const loanAmt = price - down
+  const totalCashIn = down + closing + (f.renoFinanced ? 0 : f.reno)
+  const loanAmt = price - down + (f.renoFinanced ? f.reno : 0)
   const monthlyMortgage = calcMortgage(loanAmt, f.rate, f.term)
   const effectiveRent = f.rent * (1 - f.vacancyPct / 100)
   const mgmt = effectiveRent * (f.mgmtPct / 100)
@@ -251,7 +251,7 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade }) {
 
 const DEFAULT_FIELDS = {
   address:'5200 McCallister St, Milton, FL 32583', zip:'32583', neighborhood:'Milton',
-  price:130000, downPct:25, closingPct:3, reno:5000,
+  price:130000, downPct:25, closingPct:3, reno:5000, renoFinanced:false,
   rent:1400, vacancyPct:5,
   taxes:120, insurance:80, mgmtPct:10, maintenance:100,
   rate:7.25, term:30,
@@ -416,6 +416,17 @@ const handleImport = async () => {
               <Field label="Closing costs" id="closingPct" value={fields.closingPct} onChange={set('closingPct')} suffix="%" />
             </FieldRow>
             <Field label="Renovation budget" id="reno" value={fields.reno} onChange={set('reno')} prefix="$" />
+<div style={{ display:'flex', gap:6, marginTop:-6, marginBottom:12 }}>
+  {['Cash','Financed'].map(opt => (
+    <button key={opt} onClick={() => setFields(f => ({...f, renoFinanced: opt==='Financed'}))}
+      style={{ flex:1, padding:'6px', fontSize:12, fontWeight:500, borderRadius:6, cursor:'pointer', fontFamily:'var(--font)',
+        background: (opt==='Financed') === fields.renoFinanced ? '#1a5fa8' : 'var(--surface2)',
+        color: (opt==='Financed') === fields.renoFinanced ? '#fff' : 'var(--text2)',
+        border: '1px solid var(--border)' }}>
+      {opt}
+    </button>
+  ))}
+</div>
             <Divider />
             <SectionLabel icon="currency-dollar">Income</SectionLabel>
             <Field label="Monthly rent" id="rent" value={fields.rent} onChange={set('rent')} prefix="$" />
