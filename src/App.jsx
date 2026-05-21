@@ -380,8 +380,9 @@ const handleImport = async () => {
 
   const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
 
-  return (
-    <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }}>
+ return (
+    <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
+      <a href="#main-content" className="skip-nav">Skip to main content</a>
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={handleUpgrade} />}
 {showSignup && <SignupModal onClose={() => setShowSignup(false)} form={signupForm} setForm={setSignupForm} error={signupError} onSubmit={() => {
   if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
