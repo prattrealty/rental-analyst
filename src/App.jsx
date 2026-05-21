@@ -257,7 +257,7 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade }) {
                 <div style={{ fontWeight:600, fontSize:15 }}>{p.fields.address||'Unnamed property'}</div>
                 <div style={{ fontSize:12, color:'var(--text2)' }}>{fmt(p.fields.price)} · {p.fields.neighborhood}</div>
               </div>
-              <button onClick={() => onDelete(p.id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', fontSize:16 }}><i className="ti ti-trash" /></button>
+             <button onClick={() => onDelete(p.id)} aria-label="Delete saved property" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', fontSize:16 }}>
             </div>
             <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
               {[
@@ -402,7 +402,7 @@ const handleImport = async () => {
     body: JSON.stringify(newUser)
   })
 }} />}
-      <div style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }}>
+    <header style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }} role="banner">
         <div style={{ display:'flex', alignItems:'center', gap:8, fontWeight:600, fontSize:15, letterSpacing:'-0.3px' }}>
           <i className="ti ti-home-dollar" style={{ fontSize:20, color:'#4da8ff' }} />
           Rental Analyst
@@ -410,19 +410,19 @@ const handleImport = async () => {
         {isPro && <span style={{ background:'#4da8ff', color:'#fff', fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10, letterSpacing:'0.5px' }}>PRO</span>}
         <div style={{ marginLeft:'auto', display:'flex', gap:4, alignItems:'center' }}>
           {['analyzer','portfolio'].map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{ padding:'6px 14px', borderRadius:6, fontSize:13, cursor:'pointer', border:'none', background:tab===t?'rgba(255,255,255,0.15)':'transparent', color:tab===t?'#fff':'rgba(255,255,255,0.55)', display:'flex', alignItems:'center', gap:6, fontFamily:'var(--font)' }}>
+      <button key={t} onClick={() => setTab(t)} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{
               <i className={`ti ti-${t==='analyzer'?'calculator':'briefcase'}`} style={{ fontSize:14 }} />
               {t.charAt(0).toUpperCase()+t.slice(1)}
               {t==='portfolio' && saved.length>0 && <span style={{ background:'#4da8ff', color:'#fff', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:600 }}>{saved.length}</span>}
             </button>
           ))}
           {!isPro && (
-            <button onClick={() => openUpgrade('nav')} style={{ marginLeft:8, padding:'6px 14px', background:'linear-gradient(135deg,#4da8ff,#1a5fa8)', color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', gap:5 }}>
+           <button onClick={() => openUpgrade('nav')} aria-label="Upgrade to Pro" style={{ 
               <i className="ti ti-bolt" style={{ fontSize:13 }} /> Go Pro
             </button>
           )}
         </div>
-      </div>
+      </header>
       {tab==='analyzer' && (
         <div style={{ display:'flex', background:'var(--surface)', borderBottom:'1px solid var(--border)', overflowX:'auto', flexShrink:0 }}>
           <MetricCard label="Monthly cash flow (Yr 1)" value={fmt(metrics.cashflow)+'/mo'} sub="After all expenses + debt" valueStyle={{ color:metrics.cashflow>=0?'var(--green)':'var(--red)' }} />
@@ -438,7 +438,7 @@ const handleImport = async () => {
         </div>
       )}
       {tab==='analyzer' ? (
-        <div style={{ display:'flex', flex:1, overflow:'hidden' }}>
+        <main id="main-content" style={{ display:'flex', flex:1, overflow:'hidden' }}>
           <div style={{ width:280, minWidth:280, background:'var(--surface)', borderRight:'1px solid var(--border)', overflowY:'auto', padding:16 }}>
             <div style={{ border:'1px solid var(--border)', borderRadius:12, padding:12, marginBottom:14 }}>
               <SectionLabel icon="link">Import from Zillow</SectionLabel>
@@ -448,14 +448,13 @@ const handleImport = async () => {
                   {importing?'Importing…':'Import'}
                 </button>
               </div>
-              {toast && (
-                <div style={{ marginTop:8, padding:'7px 10px', background:toast.type==='success'?'#eaf3de':'#faeeda', borderRadius:6, fontSize:12, color:toast.type==='success'?'#3b6d11':'#854f0b', display:'flex', gap:6, alignItems:'flex-start' }}>
-                  <i className="ti ti-circle-check" style={{ fontSize:14, marginTop:1 }} />{toast.msg}
+             {toast && (
+  <div role="alert" aria-live="polite" style={{ marginTop:8, padding:'7px 10px', background:toast.type==='success'?'#eaf3de':'#faeeda',
                 </div>
               )}
             </div>
             <div style={{ marginBottom:14 }}>
-              <button onClick={handleSave} style={{ width:'100%', padding:'8px 12px', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, cursor:'pointer', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', gap:6, fontFamily:'var(--font)' }}>
+              <button onClick={handleSave} aria-label="Save property to portfolio" style={{
                 <i className="ti ti-bookmark" /> Save property
                 {!isPro && <span style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)' }}>{saved.length}/{FREE_LIMIT}</span>}
               </button>
@@ -560,6 +559,6 @@ const handleImport = async () => {
       ) : (
         <Portfolio saved={saved} onDelete={handleDelete} isPro={isPro} onUpgrade={() => openUpgrade('portfolio')} />
       )}
-    </div>
+    </main>
   )
 }
