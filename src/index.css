@@ -5,16 +5,16 @@
   --blue: #1a5fa8;
   --blue-light: #4da8ff;
   --green: #1a7a4a;
-  --amber: #d4a017;
-  --red: #c0392b;
+  --amber: #b8860b;
+  --red: #b91c1c;
   --bg: #f4f5f7;
   --surface: #ffffff;
   --surface2: #f8f9fa;
-  --border: rgba(0,0,0,0.08);
-  --border-strong: rgba(0,0,0,0.15);
+  --border: rgba(0,0,0,0.12);
+  --border-strong: rgba(0,0,0,0.2);
   --text: #1a1a2e;
-  --text2: #5a6478;
-  --text3: #9099a8;
+  --text2: #3d4452;
+  --text3: #5a6172;
   --font: 'DM Sans', -apple-system, sans-serif;
   --radius: 8px;
   --radius-lg: 12px;
@@ -25,11 +25,11 @@
     --bg: #0d1117;
     --surface: #161b22;
     --surface2: #1c2128;
-    --border: rgba(255,255,255,0.08);
-    --border-strong: rgba(255,255,255,0.15);
+    --border: rgba(255,255,255,0.12);
+    --border-strong: rgba(255,255,255,0.2);
     --text: #e6edf3;
-    --text2: #8b949e;
-    --text3: #484f58;
+    --text2: #b0bac8;
+    --text3: #8b949e;
     --navy: #1c2a3a;
   }
 }
@@ -37,7 +37,23 @@
 html, body, #root { height: 100%; }
 body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 input, button { font-family: var(--font); }
-input[type="text"], input[type="number"] {
+
+/* Skip navigation for keyboard users */
+.skip-nav {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--blue);
+  color: #fff;
+  padding: 8px 16px;
+  z-index: 9999;
+  font-size: 14px;
+  border-radius: 0 0 8px 0;
+  text-decoration: none;
+}
+.skip-nav:focus { top: 0; }
+
+input[type="text"], input[type="number"], input[type="email"], input[type="password"] {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--border-strong);
@@ -46,9 +62,33 @@ input[type="text"], input[type="number"] {
   background: var(--surface);
   color: var(--text);
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-input[type="text"]:focus, input[type="number"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,95,168,0.1); }
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(26,95,168,0.25);
+}
+
+/* Strong focus styles for keyboard navigation */
+*:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus-visible {
+  outline: 3px solid var(--blue-light);
+  outline-offset: 2px;
+}
+
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+/* High contrast mode support */
+@media (forced-colors: active) {
+  * { border-color: ButtonText; }
+}
