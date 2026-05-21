@@ -181,7 +181,7 @@ function MetricCard({ label, value, sub, valueStyle, badge: b }) {
 function Field({ label, id, value, onChange, prefix, suffix, type='number' }) {
   return (
     <div style={{ marginBottom:12 }}>
-      <label style={{ display:'block', fontSize:11, fontWeight:500, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>{label}</label>
+      <label htmlFor={id} style={{ display:'block', fontSize:11, fontWeight:500, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>{label}</label>
       <div style={{ position:'relative' }}>
         {prefix && <span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>{prefix}</span>}
         <input type={type} id={id} value={value} onChange={e => onChange(e.target.value)} onFocus={e => e.target.select()} style={{ paddingLeft:prefix?18:10, paddingRight:suffix?28:10 }} />
