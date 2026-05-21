@@ -48,6 +48,45 @@ function calcMetrics(f) {
   return { price, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF, capRate, coc, grossYield, breakeven, chartData }
 }
 
+function SignupModal({ onClose, form, setForm, onSubmit, error }) {
+  return (
+    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:420, overflow:'hidden', boxShadow:'0 24px 60px rgba(0,0,0,0.3)' }}>
+        <div style={{ background:'var(--navy)', padding:'28px 28px 24px', color:'#fff', position:'relative' }}>
+          <button onClick={onClose} style={{ position:'absolute', top:16, right:16, background:'rgba(255,255,255,0.1)', border:'none', borderRadius:6, color:'#fff', cursor:'pointer', width:28, height:28, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}><i className="ti ti-x" /></button>
+          <div style={{ fontSize:11, letterSpacing:'1px', textTransform:'uppercase', color:'#4da8ff', marginBottom:6, fontWeight:600 }}>Free account</div>
+          <div style={{ fontSize:22, fontWeight:700, marginBottom:6 }}>Save your analysis</div>
+          <div style={{ fontSize:14, color:'rgba(255,255,255,0.65)' }}>Create a free account to save properties and track your portfolio.</div>
+        </div>
+        <div style={{ padding:'24px 28px' }}>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>First name</label>
+            <input type="text" value={form.firstName} onChange={e => setForm(f => ({...f, firstName:e.target.value}))} placeholder="Scott" style={{ width:'100%' }} />
+          </div>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Email</label>
+            <input type="text" value={form.email} onChange={e => setForm(f => ({...f, email:e.target.value}))} placeholder="scott@example.com" style={{ width:'100%' }} />
+          </div>
+          <div style={{ marginBottom:16 }}>
+            <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Password</label>
+            <input type="password" value={form.password} onChange={e => setForm(f => ({...f, password:e.target.value}))} placeholder="••••••••" style={{ width:'100%' }} />
+          </div>
+          <div style={{ display:'flex', alignItems:'flex-start', gap:8, marginBottom:16 }}>
+            <input type="checkbox" id="agreed" checked={form.agreed} onChange={e => setForm(f => ({...f, agreed:e.target.checked}))} style={{ marginTop:2, width:'auto' }} />
+            <label htmlFor="agreed" style={{ fontSize:12, color:'var(--text2)', lineHeight:1.4 }}>I agree to receive occasional updates from Rental Analyst. No spam, no selling your data.</label>
+          </div>
+          {error && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{error}</div>}
+          <button onClick={onSubmit} style={{ width:'100%', padding:'13px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)' }}>
+            Create Free Account
+          </button>
+          <div style={{ textAlign:'center', fontSize:11, color:'var(--text3)', marginTop:10 }}>
+            We respect your privacy · No credit card required
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 function UpgradeModal({ onClose, trigger, onUpgrade }) {
   const features = [
     { icon: 'ti-building-store', label: 'Unlimited property saves', free: '2 properties', pro: 'Unlimited' },
@@ -264,7 +303,11 @@ export default function App() {
   const [importing, setImporting] = useState(false)
   const [toast, setToast] = useState(null)
   const [showUpgrade, setShowUpgrade] = useState(false)
-  const [upgradeTrigger, setUpgradeTrigger] = useState('general')
+const [upgradeTrigger, setUpgradeTrigger] = useState('general')
+const [showSignup, setShowSignup] = useState(false)
+const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('ra_user')||'null') } catch { return null } })
+const [signupForm, setSignupForm] = useState({ firstName:'', email:'', password:'', agreed:false })
+const [signupError, setSignupError] = useState('')
   const [isPro, setIsPro] = useState(() => localStorage.getItem('ra_pro') === 'true')
   const [saved, setSaved] = useState(() => { try { return JSON.parse(localStorage.getItem('ra_portfolio')||'[]') } catch { return [] } })
   const toastTimer = useRef(null)
@@ -280,7 +323,8 @@ export default function App() {
 
   const openUpgrade = (trigger='general') => { setUpgradeTrigger(trigger); setShowUpgrade(true) }
 
-  const handleSave = () => {
+const handleSave = () => {
+    if (!user) { setShowSignup(true); return }
     if (!isPro && saved.length >= FREE_LIMIT) { openUpgrade('save'); return }
     const entry = { id:Date.now(), fields:{...fields}, metrics }
     const next = [...saved, entry]
@@ -339,6 +383,18 @@ const handleImport = async () => {
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }}>
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={handleUpgrade} />}
+{showSignup && <SignupModal onClose={() => setShowSignup(false)} form={signupForm} setForm={setSignupForm} error={signupError} onSubmit={() => {
+  if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
+  if (!signupForm.email.includes('@')) { setSignupError('Please enter a valid email.'); return }
+  if (signupForm.password.length < 6) { setSignupError('Password must be at least 6 characters.'); return }
+  if (!signupForm.agreed) { setSignupError('Please agree to receive updates.'); return }
+  const newUser = { firstName: signupForm.firstName, email: signupForm.email, joinedAt: new Date().toISOString() }
+  setUser(newUser)
+  localStorage.setItem('ra_user', JSON.stringify(newUser))
+  setShowSignup(false)
+  setSignupError('')
+  showToast(`Welcome, ${signupForm.firstName}! Now save your first property.`)
+}} />}
       <div style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8, fontWeight:600, fontSize:15, letterSpacing:'-0.3px' }}>
           <i className="ti ti-home-dollar" style={{ fontSize:20, color:'#4da8ff' }} />
