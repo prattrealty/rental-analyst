@@ -179,13 +179,23 @@ function MetricCard({ label, value, sub, valueStyle, badge: b }) {
 }
 
 function Field({ label, id, value, onChange, prefix, suffix, type='number' }) {
+  const inputId = `field-${id}`
   return (
     <div style={{ marginBottom:12 }}>
-      <label htmlFor={id} style={{ display:'block', fontSize:11, fontWeight:500, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>{label}</label>
+      <label htmlFor={inputId} style={{ display:'block', fontSize:12, fontWeight:500, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>{label}</label>
       <div style={{ position:'relative' }}>
-        {prefix && <span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>{prefix}</span>}
-        <input type={type} id={id} value={value} onChange={e => onChange(e.target.value)} onFocus={e => e.target.select()} style={{ paddingLeft:prefix?18:10, paddingRight:suffix?28:10 }} />
-        {suffix && <span style={{ position:'absolute', right:9, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--text3)', pointerEvents:'none' }}>{suffix}</span>}
+        {prefix && <span aria-hidden="true" style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>{prefix}</span>}
+        <input
+          type={type}
+          id={inputId}
+          name={inputId}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onFocus={e => e.target.select()}
+          aria-label={label}
+          style={{ paddingLeft:prefix?18:10, paddingRight:suffix?28:10 }}
+        />
+        {suffix && <span aria-hidden="true" style={{ position:'absolute', right:9, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--text3)', pointerEvents:'none' }}>{suffix}</span>}
       </div>
     </div>
   )
