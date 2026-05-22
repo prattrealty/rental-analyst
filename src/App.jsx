@@ -566,10 +566,10 @@ const handleImport = async () => {
               </div>
             </div>
           </div>
-        </div>
+        </main>
       ) : (
         <Portfolio saved={saved} onDelete={handleDelete} isPro={isPro} onUpgrade={() => openUpgrade('portfolio')} />
       )}
-    </main>
+    </div>>
   )
 }
