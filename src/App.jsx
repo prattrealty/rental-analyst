@@ -464,11 +464,11 @@ const handleImport = async () => {
   </div>
 )}
             </div>
-            <div style={{ marginBottom:14 }}>
-              <button onClick={handleSave} aria-label="Save property to portfolio" style={{
-                <i className="ti ti-bookmark" /> Save property
-                {!isPro && <span style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)' }}>{saved.length}/{FREE_LIMIT}</span>}
-              </button>
+        <div style={{ marginBottom:14 }}>
+  <button onClick={handleSave} aria-label="Save property to portfolio" style={{ width:'100%', padding:'8px 12px', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, cursor:'pointer', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', gap:6, fontFamily:'var(--font)' }}>
+    <i className="ti ti-bookmark" /> Save property
+    {!isPro && <span style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)' }}>{saved.length}/{FREE_LIMIT}</span>}
+  </button>
               {!isPro && saved.length >= FREE_LIMIT && (
                 <div style={{ fontSize:11, color:'#a32d2d', marginTop:4, textAlign:'center' }}>
                   Free limit reached — <button onClick={() => openUpgrade('save')} style={{ background:'none', border:'none', color:'#1a5fa8', fontSize:11, cursor:'pointer', padding:0, fontFamily:'var(--font)', textDecoration:'underline' }}>upgrade to save more</button>
