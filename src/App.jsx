@@ -420,7 +420,7 @@ const handleImport = async () => {
         {isPro && <span style={{ background:'#4da8ff', color:'#fff', fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10, letterSpacing:'0.5px' }}>PRO</span>}
         <div style={{ marginLeft:'auto', display:'flex', gap:4, alignItems:'center' }}>
           {['analyzer','portfolio'].map(t => (
-      <button key={t} onClick={() => setTab(t)} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{
+     <button key={t} onClick={() => setTab(t)} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{ padding:'6px 14px', borderRadius:6, fontSize:13, cursor:'pointer', border:'none', background:tab===t?'rgba(255,255,255,0.15)':'transparent', color:tab===t?'#fff':'rgba(255,255,255,0.55)', display:'flex', alignItems:'center', gap:6, fontFamily:'var(--font)' }}>
               <i className={`ti ti-${t==='analyzer'?'calculator':'briefcase'}`} style={{ fontSize:14 }} />
               {t.charAt(0).toUpperCase()+t.slice(1)}
               {t==='portfolio' && saved.length>0 && <span style={{ background:'#4da8ff', color:'#fff', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:600 }}>{saved.length}</span>}
