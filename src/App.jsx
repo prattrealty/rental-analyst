@@ -458,10 +458,11 @@ const handleImport = async () => {
                   {importing?'Importing…':'Import'}
                 </button>
               </div>
-             {toast && (
-  <div role="alert" aria-live="polite" style={{ marginTop:8, padding:'7px 10px', background:toast.type==='success'?'#eaf3de':'#faeeda',
-                </div>
-              )}
+          {toast && (
+  <div role="alert" aria-live="polite" style={{ marginTop:8, padding:'7px 10px', background:toast.type==='success'?'#eaf3de':'#faeeda', borderRadius:6, fontSize:12, color:toast.type==='success'?'#3b6d11':'#854f0b', display:'flex', gap:6, alignItems:'flex-start' }}>
+    <i className="ti ti-circle-check" style={{ fontSize:14, marginTop:1 }} />{toast.msg}
+  </div>
+)}
             </div>
             <div style={{ marginBottom:14 }}>
               <button onClick={handleSave} aria-label="Save property to portfolio" style={{
