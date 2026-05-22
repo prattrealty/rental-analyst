@@ -427,7 +427,7 @@ const handleImport = async () => {
             </button>
           ))}
           {!isPro && (
-           <button onClick={() => openUpgrade('nav')} aria-label="Upgrade to Pro" style={{ 
+      <button onClick={() => openUpgrade('nav')} aria-label="Upgrade to Pro" style={{ marginLeft:8, padding:'6px 14px', background:'linear-gradient(135deg,#4da8ff,#1a5fa8)', color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', gap:5 }}>
               <i className="ti ti-bolt" style={{ fontSize:13 }} /> Go Pro
             </button>
           )}
