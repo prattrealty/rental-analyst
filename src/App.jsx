@@ -453,12 +453,12 @@ const handleImport = async () => {
             <div style={{ border:'1px solid var(--border)', borderRadius:12, padding:12, marginBottom:14 }}>
               <SectionLabel icon="link">Import from Zillow</SectionLabel>
               <div style={{ display:'flex', gap:6 }}>
-               placeholder="Paste a Zillow listing URL…" aria-label="Zillow listing URL" style={{ flex:1, fontSize:12 }}
+               <input type="text" value={zillowUrl} onChange={e => setZillowUrl(e.target.value)} placeholder="Paste a Zillow listing URL…" aria-label="Zillow listing URL" style={{ flex:1, fontSize:12 }} />
                 <button onClick={handleImport} disabled={importing} style={{ padding:'8px 12px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:6, fontSize:13, cursor:importing?'not-allowed':'pointer', fontWeight:500, fontFamily:'var(--font)', whiteSpace:'nowrap', opacity:importing?0.7:1 }}>
                   {importing?'Importing…':'Import'}
                 </button>
               </div>
-          {toast && (
+ {toast && (
   <div role="alert" aria-live="polite" style={{ marginTop:8, padding:'7px 10px', background:toast.type==='success'?'#eaf3de':'#faeeda', borderRadius:6, fontSize:12, color:toast.type==='success'?'#3b6d11':'#854f0b', display:'flex', gap:6, alignItems:'flex-start' }}>
     <i className="ti ti-circle-check" style={{ fontSize:14, marginTop:1 }} />{toast.msg}
   </div>
