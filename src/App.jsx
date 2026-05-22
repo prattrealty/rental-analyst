@@ -299,10 +299,10 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade }) {
 }
 
 const DEFAULT_FIELDS = {
-  address:'5200 McCallister St, Milton, FL 32583', zip:'32583', neighborhood:'Milton',
-  price:130000, downPct:25, closingPct:3, reno:5000, renoFinanced:false,
-  rent:1400, vacancyPct:5,
-  taxes:120, insurance:80, mgmtPct:10, maintenance:100,
+  address:'', zip:'', neighborhood:'',
+  price:0, downPct:25, closingPct:3, reno:0, renoFinanced:false,
+  rent:0, vacancyPct:5,
+  taxes:0, insurance:0, mgmtPct:10, maintenance:0,
   rate:7.25, term:30,
 }
 
