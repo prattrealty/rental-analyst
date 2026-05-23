@@ -369,35 +369,28 @@ export default function App() {
     showToast('🎉 Welcome to Pro! All features unlocked.')
   }
 
+  const [importAddress, setImportAddress] = useState('')
+  const [showAddressFallback, setShowAddressFallback] = useState(false)
+
   const extractAddressFromZillow = (url) => {
     try {
-      // Zillow URLs look like: zillow.com/homedetails/123-Main-St-City-ST-12345/12345_zpid/
       const match = url.match(/homedetails\/([^/]+)\//)
       if (!match) return null
       const slug = match[1]
-      // Remove the zpid portion if it snuck in, strip trailing digits
       const cleaned = slug
-        .replace(/-\d+$/, '')       // remove trailing zip or id digits run
-        .replace(/-/g, ' ')          // dashes to spaces
-        .replace(/\b(\w)/g, c => c.toUpperCase()) // title case
+        .replace(/-\d{5}(\d*)$/, m => m.replace(/-/, ' '))  // preserve zip
+        .replace(/-/g, ' ')
+        .replace(/\b(\w)/g, c => c.toUpperCase())
+        .replace(/\s+/g, ' ').trim()
       return cleaned
     } catch {
       return null
     }
   }
 
-  const handleImport = async () => {
-    const url = zillowUrl.trim()
-    if (!url) {
-      showToast('Paste a Zillow listing URL first.', 'error')
-      return
-    }
-    const address = extractAddressFromZillow(url)
-    if (!address) {
-      showToast('Could not read address from that URL. Try a full Zillow listing URL (e.g. zillow.com/homedetails/…)', 'error')
-      return
-    }
+  const runImport = async (address) => {
     setImporting(true)
+    setShowAddressFallback(false)
     try {
       const encoded = encodeURIComponent(address)
       const apiKey = import.meta.env.VITE_RENTCAST_API_KEY
@@ -408,6 +401,18 @@ export default function App() {
       const propData = await propRes.json()
       const rentData = await rentRes.json()
       const prop = Array.isArray(propData) ? (propData[0] || {}) : (propData || {})
+
+      // Build a detailed debug summary of what came back
+      const debugLines = [
+        `Address: ${prop.formattedAddress || '❌ not found'}`,
+        `Rent est: ${rentData.rent ? '$'+Math.round(rentData.rent)+'/mo' : '❌ not found'}`,
+        `Assessed value: ${prop.assessedValue ? '$'+prop.assessedValue.toLocaleString() : '❌ not found'}`,
+        `List price: ${prop.price ? '$'+prop.price.toLocaleString() : '❌ not found'}`,
+        `Taxes: ${prop.propertyTaxes ? '$'+Math.round(prop.propertyTaxes/12)+'/mo' : '❌ not found'}`,
+        `City/Zip: ${prop.city || '—'} ${prop.zipCode || '—'}`,
+      ]
+      console.log('[RentCast Debug]', { propData, rentData })
+
       const importedFields = {}
       importedFields.address = prop.formattedAddress || address
       if (prop.zipCode) importedFields.zip = String(prop.zipCode)
@@ -416,18 +421,31 @@ export default function App() {
       if (rentData.rent) importedFields.rent = parseFloat(rentData.rent) || 0
       if (prop.propertyTaxes) importedFields.taxes = Math.round((parseFloat(prop.propertyTaxes) || 0) / 12)
       setFields(f => ({ ...f, ...importedFields }))
-      const imported = [
-        importedFields.address && 'Address',
-        importedFields.rent && 'Rent estimate',
-        importedFields.price && 'Price',
-        importedFields.taxes && 'Taxes',
-      ].filter(Boolean)
-      showToast(`Imported: ${imported.join(', ')}`)
+
+      const gotData = importedFields.rent || importedFields.price || importedFields.taxes
+      if (!gotData && !prop.formattedAddress) {
+        setImportAddress(address)
+        setShowAddressFallback(true)
+        showToast('RentCast couldn\'t match that address. Edit it below and retry.', 'error')
+      } else {
+        showToast(debugLines.join(' · '))
+      }
     } catch (err) {
-      showToast('Could not fetch property data. Check your URL and try again.', 'error')
+      setImportAddress(address)
+      setShowAddressFallback(true)
+      showToast('API error — edit the address below and retry.', 'error')
     } finally {
       setImporting(false)
     }
+  }
+
+  const handleImport = async () => {
+    const url = zillowUrl.trim()
+    if (!url) { showToast('Paste a Zillow listing URL first.', 'error'); return }
+    const address = extractAddressFromZillow(url)
+    if (!address) { showToast('Could not read address from that URL. Try a full Zillow listing URL (e.g. zillow.com/homedetails/…)', 'error'); return }
+    setImportAddress(address)
+    await runImport(address)
   }
 
   const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
@@ -500,9 +518,18 @@ export default function App() {
                   {importing?'Importing…':'Import'}
                 </button>
               </div>
+              {showAddressFallback && (
+                <div style={{ marginTop:8 }}>
+                  <div style={{ fontSize:11, color:"var(--text2)", marginBottom:4 }}>Edit address and retry:</div>
+                  <div style={{ display:"flex", gap:6 }}>
+                    <input type="text" value={importAddress} onChange={e => setImportAddress(e.target.value)} style={{ flex:1, fontSize:12 }} placeholder="123 Main St, City, ST 12345" />
+                    <button onClick={() => runImport(importAddress)} disabled={importing} style={{ padding:"6px 10px", background:"#1a5fa8", color:"#fff", border:"none", borderRadius:6, fontSize:12, cursor:"pointer", fontWeight:500, fontFamily:"var(--font)", whiteSpace:"nowrap" }}>Retry</button>
+                  </div>
+                </div>
+              )}
               {toast && (
-                <div role="alert" aria-live="polite" style={{ marginTop:8, padding:'7px 10px', background:toast.type==='success'?'#eaf3de':'#faeeda', borderRadius:6, fontSize:12, color:toast.type==='success'?'#3b6d11':'#854f0b', display:'flex', gap:6, alignItems:'flex-start' }}>
-                  <i className="ti ti-circle-check" style={{ fontSize:14, marginTop:1 }} />{toast.msg}
+                <div role="alert" aria-live="polite" style={{ marginTop:8, padding:"7px 10px", background:toast.type==="success"?"#eaf3de":"#faeeda", borderRadius:6, fontSize:11, color:toast.type==="success"?"#3b6d11":"#854f0b", display:"flex", gap:6, alignItems:"flex-start", wordBreak:"break-word" }}>
+                  <i className={`ti ${toast.type==="success"?"ti-circle-check":"ti-alert-circle"}`} style={{ fontSize:14, marginTop:1, flexShrink:0 }} />{toast.msg}
                 </div>
               )}
             </div>
