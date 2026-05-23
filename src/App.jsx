@@ -62,7 +62,7 @@ function calcMetrics(f) {
 
 
 function calcDealScore(metrics) {
-  if (metrics.price <= 0) return null
+  if (metrics.price <= 0 || metrics.rent <= 0) return null
   let score = 0
   const breakdown = []
 
@@ -477,8 +477,9 @@ export default function App() {
   const toastTimer = useRef(null)
 
   const set = (key) => (val) => setFields(f => ({ ...f, [key]: ['address','zip','neighborhood'].includes(key) ? val : (parseFloat(val) || 0) }))
-  const activeRent = sliderRent > 0 ? sliderRent : fields.rent
+  const activeRent = (sliderRent > 0 && sliderRent !== fields.rent) ? sliderRent : fields.rent
   const metrics = calcMetrics({ ...fields, rent: activeRent })
+  console.log('[DEBUG] fields.rent:', fields.rent, 'activeRent:', activeRent, 'price:', fields.price, 'metrics.capRate:', metrics.capRate)
 
   const showToast = (msg, type='success') => {
     clearTimeout(toastTimer.current)
@@ -761,8 +762,15 @@ export default function App() {
                 </div>
               ))}
             </div>
-            <DealScoreCard metrics={metrics} />
-            <RentSlider rent={fields.rent || 1500} onChange={v => setSliderRent(v)} />
+            {metrics.price > 0
+              ? <DealScoreCard metrics={metrics} />
+              : <div style={{ background:'#f0f7ff', border:'2px dashed #c0d8f0', borderRadius:12, padding:'18px 22px', marginBottom:18, textAlign:'center' }}>
+                  <i className="ti ti-calculator" style={{ fontSize:24, color:'#1a5fa8', marginBottom:8, display:'block' }} />
+                  <div style={{ fontSize:14, fontWeight:600, color:'#0f2744', marginBottom:4 }}>Enter purchase price to see Deal Score</div>
+                  <div style={{ fontSize:12, color:'#1a5fa8' }}>A 0–100 score based on cap rate, cash flow, CoC return, and more.</div>
+                </div>
+            }
+            <RentSlider rent={activeRent || 1500} onChange={v => setSliderRent(v)} />
             <CompsCard comps={comps} loading={compsLoading} />
             <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'20px 20px 10px' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:2 }}>
