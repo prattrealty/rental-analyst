@@ -479,7 +479,9 @@ export default function App() {
   const set = (key) => (val) => setFields(f => ({ ...f, [key]: ['address','zip','neighborhood'].includes(key) ? val : (parseFloat(val) || 0) }))
   const activeRent = (sliderRent > 0 && sliderRent !== fields.rent) ? sliderRent : fields.rent
   const metrics = calcMetrics({ ...fields, rent: activeRent })
-  console.log('[DEBUG] fields.rent:', fields.rent, 'activeRent:', activeRent, 'price:', fields.price, 'metrics.capRate:', metrics.capRate)
+  React.useEffect(() => {
+    console.log('[FIELDS CHANGED] rent:', fields.rent, 'price:', fields.price, 'rentRangeLow:', fields.rentRangeLow)
+  }, [fields.rent, fields.price])
 
   const showToast = (msg, type='success') => {
     clearTimeout(toastTimer.current)
