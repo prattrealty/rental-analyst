@@ -60,6 +60,144 @@ function calcMetrics(f) {
   return { price, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF, capRate, coc, grossYield, breakeven, chartData }
 }
 
+
+function calcDealScore(metrics) {
+  if (metrics.price <= 0) return null
+  let score = 0
+  const breakdown = []
+
+  const capPts = metrics.capRate >= 8 ? 30 : metrics.capRate >= 6 ? 22 : metrics.capRate >= 5 ? 15 : metrics.capRate >= 3 ? 8 : 2
+  score += capPts
+  breakdown.push({ label: 'Cap rate', score: capPts, max: 30, value: metrics.capRate.toFixed(2) + '%' })
+
+  const cocPts = metrics.coc >= 8 ? 25 : metrics.coc >= 5 ? 18 : metrics.coc >= 2 ? 10 : metrics.coc >= 0 ? 4 : 0
+  score += cocPts
+  breakdown.push({ label: 'Cash-on-cash', score: cocPts, max: 25, value: metrics.coc.toFixed(2) + '%' })
+
+  const gyPts = metrics.grossYield >= 9 ? 20 : metrics.grossYield >= 8 ? 15 : metrics.grossYield >= 7 ? 10 : metrics.grossYield >= 5 ? 5 : 2
+  score += gyPts
+  breakdown.push({ label: 'Gross yield', score: gyPts, max: 20, value: metrics.grossYield.toFixed(2) + '%' })
+
+  const cfPts = metrics.cashflow >= 300 ? 15 : metrics.cashflow >= 100 ? 10 : metrics.cashflow >= 0 ? 5 : 0
+  score += cfPts
+  breakdown.push({ label: 'Monthly cash flow', score: cfPts, max: 15, value: '$' + Math.round(metrics.cashflow) + '/mo' })
+
+  const beRatio = metrics.breakeven > 0 ? metrics.cashflow / metrics.breakeven : 0
+  const bePts = beRatio >= 0.15 ? 10 : beRatio >= 0.05 ? 7 : beRatio >= 0 ? 3 : 0
+  score += bePts
+  breakdown.push({ label: 'Break-even buffer', score: bePts, max: 10, value: (beRatio * 100).toFixed(1) + '% above break-even' })
+
+  const grade = score >= 75
+    ? { label: 'Strong Deal', color: '#1a7a4a', bg: '#eaf3de', emoji: '🟢' }
+    : score >= 50
+    ? { label: 'Average Deal', color: '#854f0b', bg: '#faeeda', emoji: '🟡' }
+    : { label: 'Below Market', color: '#a32d2d', bg: '#fcebeb', emoji: '🔴' }
+
+  return { score, breakdown, grade }
+}
+
+function DealScoreCard({ metrics }) {
+  const result = calcDealScore(metrics)
+  if (!result) return null
+  const { score, breakdown, grade } = result
+  const circumference = 2 * Math.PI * 40
+  const dash = (score / 100) * circumference
+  return (
+    <div style={{ background: 'var(--surface)', border: '2px solid ' + grade.color, borderRadius: 12, padding: '20px 22px', marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 16 }}>
+        <div style={{ position: 'relative', width: 100, height: 100, flexShrink: 0 }}>
+          <svg width="100" height="100" style={{ transform: 'rotate(-90deg)' }}>
+            <circle cx="50" cy="50" r="40" fill="none" stroke="var(--border)" strokeWidth="8" />
+            <circle cx="50" cy="50" r="40" fill="none" stroke={grade.color} strokeWidth="8"
+              strokeDasharray={dash + ' ' + circumference} strokeLinecap="round"
+              style={{ transition: 'stroke-dasharray 0.6s ease' }} />
+          </svg>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ fontSize: 26, fontWeight: 700, color: grade.color, lineHeight: 1 }}>{score}</div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500 }}>/ 100</div>
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Deal Score</div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: grade.color }}>{grade.emoji} {grade.label}</div>
+          <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4, maxWidth: 220 }}>
+            {score >= 75 ? 'Strong fundamentals — this deal pencils out well.'
+              : score >= 50 ? 'Decent deal with room to negotiate or optimize.'
+              : 'Proceed with caution — numbers are tight for this market.'}
+          </div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {breakdown.map(b => (
+          <div key={b.label}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text2)', marginBottom: 3 }}>
+              <span>{b.label}</span>
+              <span style={{ fontWeight: 500, color: 'var(--text)' }}>{b.value} <span style={{ color: grade.color }}>+{b.score}</span></span>
+            </div>
+            <div style={{ height: 4, borderRadius: 2, background: 'var(--border)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: ((b.score / b.max) * 100) + '%', background: grade.color, borderRadius: 2, transition: 'width 0.5s ease' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RentSlider({ rent, onChange }) {
+  const base = rent || 1500
+  const min = Math.max(0, Math.round(base * 0.7))
+  const max = Math.round(base * 1.3)
+  const [val, setVal] = React.useState(base)
+  React.useEffect(() => { setVal(base) }, [base])
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', marginBottom: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 600 }}>💡 What-if rent scenario</div>
+        <div style={{ fontSize: 18, fontWeight: 700, color: '#1a7a4a' }}>${val.toLocaleString()}<span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text2)' }}>/mo</span></div>
+      </div>
+      <input type="range" min={min} max={max} value={val}
+        onChange={e => { const v = Number(e.target.value); setVal(v); onChange(v) }}
+        style={{ width: '100%', accentColor: '#1a5fa8', cursor: 'pointer' }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>
+        <span>${min.toLocaleString()}</span>
+        <span style={{ color: 'var(--text2)', fontSize: 11 }}>Drag to stress-test</span>
+        <span>${max.toLocaleString()}</span>
+      </div>
+    </div>
+  )
+}
+
+function CompsCard({ comps, loading }) {
+  if (loading) return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px', marginBottom: 18, textAlign: 'center', color: 'var(--text2)', fontSize: 13 }}>
+      <i className="ti ti-loader" style={{ fontSize: 18, marginBottom: 6, display: 'block' }} /> Loading comparable rentals...
+    </div>
+  )
+  if (!comps || comps.length === 0) return null
+  const avgRent = Math.round(comps.reduce((s, c) => s + (c.price || 0), 0) / comps.length)
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 22px', marginBottom: 18 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div style={{ fontSize: 15, fontWeight: 600 }}>Comparable Rentals Nearby</div>
+        <div style={{ fontSize: 12, color: 'var(--text2)' }}>Avg: <span style={{ fontWeight: 600, color: 'var(--text)' }}>${avgRent.toLocaleString()}/mo</span></div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {comps.slice(0, 5).map((c, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', padding: '10px 12px', background: 'var(--surface2)', borderRadius: 8, gap: 12 }}>
+            <i className="ti ti-home" style={{ fontSize: 16, color: 'var(--text3)', flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.formattedAddress || 'Nearby property'}</div>
+              <div style={{ fontSize: 11, color: 'var(--text2)' }}>{c.bedrooms || '?'}bd · {c.bathrooms || '?'}ba · {c.squareFootage ? c.squareFootage.toLocaleString() + ' sqft' : 'sqft N/A'}</div>
+            </div>
+            <div style={{ fontWeight: 700, fontSize: 14, color: '#1a5fa8', flexShrink: 0 }}>${(c.price || 0).toLocaleString()}<span style={{ fontSize: 10, fontWeight: 400, color: 'var(--text2)' }}>/mo</span></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function SignupModal({ onClose, form, setForm, onSubmit, error }) {
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
@@ -333,10 +471,14 @@ export default function App() {
   const [signupError, setSignupError] = useState('')
   const [isPro, setIsPro] = useState(() => localStorage.getItem('ra_pro') === 'true')
   const [saved, setSaved] = useState(() => { try { return JSON.parse(localStorage.getItem('ra_portfolio')||'[]') } catch { return [] } })
+  const [comps, setComps] = useState([])
+  const [compsLoading, setCompsLoading] = useState(false)
+  const [sliderRent, setSliderRent] = useState(0)
   const toastTimer = useRef(null)
 
   const set = (key) => (val) => setFields(f => ({ ...f, [key]: ['address','zip','neighborhood'].includes(key) ? val : (parseFloat(val) || 0) }))
-  const metrics = calcMetrics(fields)
+  const activeRent = sliderRent > 0 ? sliderRent : fields.rent
+  const metrics = calcMetrics({ ...fields, rent: activeRent })
 
   const showToast = (msg, type='success') => {
     clearTimeout(toastTimer.current)
@@ -603,6 +745,9 @@ export default function App() {
                 </div>
               ))}
             </div>
+            <DealScoreCard metrics={metrics} />
+            <RentSlider rent={fields.rent || 1500} onChange={v => setSliderRent(v)} />
+            <CompsCard comps={comps} loading={compsLoading} />
             <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'20px 20px 10px' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:2 }}>
                 <div style={{ fontSize:15, fontWeight:600 }}>Cash flow over time</div>
