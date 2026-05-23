@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 const fmtK = (n) => n >= 1000 ? `$${Math.round(n / 1000)}K` : fmt(n)
-const fmtPct = (n) => `${n.toFixed(2)}%`
+const fmtPct = (n) => isNaN(n) ? '0.00%' : `${n.toFixed(2)}%`
 const FREE_LIMIT = 2
 const PRO_PRICE = 7
 
@@ -16,23 +16,35 @@ function calcMortgage(principal, annualRate, years) {
 
 function calcMetrics(f) {
   const price = f.price || 0
-  const down = price * (f.downPct / 100)
-  const closing = price * (f.closingPct / 100)
-  const totalCashIn = down + closing + (f.renoFinanced ? 0 : f.reno)
-  const loanAmt = price - down + (f.renoFinanced ? f.reno : 0)
-  const monthlyMortgage = calcMortgage(loanAmt, f.rate, f.term)
-  const effectiveRent = f.rent * (1 - f.vacancyPct / 100)
-  const mgmt = effectiveRent * (f.mgmtPct / 100)
-  const totalExpenses = f.taxes + f.insurance + mgmt + f.maintenance
+  const downPct = f.downPct || 0
+  const closingPct = f.closingPct || 0
+  const reno = f.reno || 0
+  const rent = f.rent || 0
+  const vacancyPct = f.vacancyPct || 0
+  const taxes = f.taxes || 0
+  const insurance = f.insurance || 0
+  const mgmtPct = f.mgmtPct || 0
+  const maintenance = f.maintenance || 0
+  const rate = f.rate || 0
+  const term = f.term || 30
+
+  const down = price * (downPct / 100)
+  const closing = price * (closingPct / 100)
+  const totalCashIn = down + closing + (f.renoFinanced ? 0 : reno)
+  const loanAmt = price - down + (f.renoFinanced ? reno : 0)
+  const monthlyMortgage = calcMortgage(loanAmt, rate, term)
+  const effectiveRent = rent * (1 - vacancyPct / 100)
+  const mgmt = effectiveRent * (mgmtPct / 100)
+  const totalExpenses = taxes + insurance + mgmt + maintenance
   const noi = effectiveRent - totalExpenses
   const cashflow = noi - monthlyMortgage
   const annualCF = cashflow * 12
   const capRate = price > 0 ? (noi * 12 / price) * 100 : 0
   const coc = totalCashIn > 0 ? (annualCF / totalCashIn) * 100 : 0
-  const grossYield = price > 0 ? (f.rent * 12 / price) * 100 : 0
+  const grossYield = price > 0 ? (rent * 12 / price) * 100 : 0
   const breakeven = totalExpenses + monthlyMortgage
-  const r = f.rate / 100 / 12
-  const n = f.term * 12
+  const r = rate / 100 / 12
+  const n = term * 12
   let balance = loanAmt
   const chartData = []
   for (let yr = 1; yr <= 10; yr++) {
@@ -87,6 +99,7 @@ function SignupModal({ onClose, form, setForm, onSubmit, error }) {
     </div>
   )
 }
+
 function UpgradeModal({ onClose, trigger, onUpgrade }) {
   const features = [
     { icon: 'ti-building-store', label: 'Unlimited property saves', free: '2 properties', pro: 'Unlimited' },
@@ -313,16 +326,16 @@ export default function App() {
   const [importing, setImporting] = useState(false)
   const [toast, setToast] = useState(null)
   const [showUpgrade, setShowUpgrade] = useState(false)
-const [upgradeTrigger, setUpgradeTrigger] = useState('general')
-const [showSignup, setShowSignup] = useState(false)
-const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('ra_user')||'null') } catch { return null } })
-const [signupForm, setSignupForm] = useState({ firstName:'', email:'', password:'', agreed:false })
-const [signupError, setSignupError] = useState('')
+  const [upgradeTrigger, setUpgradeTrigger] = useState('general')
+  const [showSignup, setShowSignup] = useState(false)
+  const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('ra_user')||'null') } catch { return null } })
+  const [signupForm, setSignupForm] = useState({ firstName:'', email:'', password:'', agreed:false })
+  const [signupError, setSignupError] = useState('')
   const [isPro, setIsPro] = useState(() => localStorage.getItem('ra_pro') === 'true')
   const [saved, setSaved] = useState(() => { try { return JSON.parse(localStorage.getItem('ra_portfolio')||'[]') } catch { return [] } })
   const toastTimer = useRef(null)
 
-  const set = (key) => (val) => setFields(f => ({ ...f, [key]: ['address','zip','neighborhood'].includes(key) ? val : (parseFloat(val)||0) }))
+  const set = (key) => (val) => setFields(f => ({ ...f, [key]: ['address','zip','neighborhood'].includes(key) ? val : (parseFloat(val) || 0) }))
   const metrics = calcMetrics(fields)
 
   const showToast = (msg, type='success') => {
@@ -333,7 +346,7 @@ const [signupError, setSignupError] = useState('')
 
   const openUpgrade = (trigger='general') => { setUpgradeTrigger(trigger); setShowUpgrade(true) }
 
-const handleSave = () => {
+  const handleSave = () => {
     if (!user) { setShowSignup(true); return }
     if (!isPro && saved.length >= FREE_LIMIT) { openUpgrade('save'); return }
     const entry = { id:Date.now(), fields:{...fields}, metrics }
@@ -356,7 +369,7 @@ const handleSave = () => {
     showToast('🎉 Welcome to Pro! All features unlocked.')
   }
 
-const handleImport = async () => {
+  const handleImport = async () => {
     if (!zillowUrl.trim()) return
     setImporting(true)
     try {
@@ -370,17 +383,22 @@ const handleImport = async () => {
       ])
       const propData = await propRes.json()
       const rentData = await rentRes.json()
-      const prop = propData[0] || {}
-      setFields(f => ({
-        ...f,
-        address: prop.formattedAddress || address,
-        zip: prop.zipCode || f.zip,
-        neighborhood: prop.city || f.neighborhood,
-        price: prop.price || prop.assessedValue || f.price,
-        rent: rentData.rent || f.rent,
-        taxes: prop.propertyTaxes ? Math.round(prop.propertyTaxes / 12) : f.taxes,
-      }))
-      showToast(`Imported: ${[prop.formattedAddress && 'Address', rentData.rent && 'Rent estimate', prop.price && 'Price', prop.propertyTaxes && 'Taxes'].filter(Boolean).join(', ')}`)
+      const prop = Array.isArray(propData) ? (propData[0] || {}) : (propData || {})
+      const importedFields = {}
+      if (prop.formattedAddress || address) importedFields.address = prop.formattedAddress || address
+      if (prop.zipCode) importedFields.zip = prop.zipCode
+      if (prop.city) importedFields.neighborhood = prop.city
+      if (prop.price || prop.assessedValue) importedFields.price = parseFloat(prop.price || prop.assessedValue) || 0
+      if (rentData.rent) importedFields.rent = parseFloat(rentData.rent) || 0
+      if (prop.propertyTaxes) importedFields.taxes = Math.round((parseFloat(prop.propertyTaxes) || 0) / 12)
+      setFields(f => ({ ...f, ...importedFields }))
+      const imported = [
+        importedFields.address && 'Address',
+        importedFields.rent && 'Rent estimate',
+        importedFields.price && 'Price',
+        importedFields.taxes && 'Taxes',
+      ].filter(Boolean)
+      showToast(`Imported: ${imported.length > 0 ? imported.join(', ') : 'Address only — enter remaining details manually'}`)
     } catch (err) {
       showToast('Could not fetch property data. Please enter manually.', 'error')
     } finally {
@@ -390,29 +408,29 @@ const handleImport = async () => {
 
   const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
 
- return (
+  return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
       <a href="#main-content" className="skip-nav">Skip to main content</a>
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={handleUpgrade} />}
-{showSignup && <SignupModal onClose={() => setShowSignup(false)} form={signupForm} setForm={setSignupForm} error={signupError} onSubmit={() => {
-  if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
-  if (!signupForm.email.includes('@')) { setSignupError('Please enter a valid email.'); return }
-  if (signupForm.password.length < 6) { setSignupError('Password must be at least 6 characters.'); return }
-  if (!signupForm.agreed) { setSignupError('Please agree to receive updates.'); return }
-  const newUser = { firstName: signupForm.firstName, email: signupForm.email, joinedAt: new Date().toISOString() }
-  setUser(newUser)
-  localStorage.setItem('ra_user', JSON.stringify(newUser))
-  setShowSignup(false)
-  setSignupError('')
-  showToast(`Welcome, ${signupForm.firstName}! Now save your first property.`)
-  fetch('https://script.google.com/macros/s/AKfycbwb4OwFfCC7NsQrpdmtUfdM6S-AsRkXVpqutyGYt6WfJvTx5exHyNmXXFdeBaQqXfZ8JA/exec', {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(newUser)
-  })
-}} />}
-    <header style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }} role="banner">
+      {showSignup && <SignupModal onClose={() => setShowSignup(false)} form={signupForm} setForm={setSignupForm} error={signupError} onSubmit={() => {
+        if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
+        if (!signupForm.email.includes('@')) { setSignupError('Please enter a valid email.'); return }
+        if (signupForm.password.length < 6) { setSignupError('Password must be at least 6 characters.'); return }
+        if (!signupForm.agreed) { setSignupError('Please agree to receive updates.'); return }
+        const newUser = { firstName: signupForm.firstName, email: signupForm.email, joinedAt: new Date().toISOString() }
+        setUser(newUser)
+        localStorage.setItem('ra_user', JSON.stringify(newUser))
+        setShowSignup(false)
+        setSignupError('')
+        showToast(`Welcome, ${signupForm.firstName}! Now save your first property.`)
+        fetch('https://script.google.com/macros/s/AKfycbwb4OwFfCC7NsQrpdmtUfdM6S-AsRkXVpqutyGYt6WfJvTx5exHyNmXXFdeBaQqXfZ8JA/exec', {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newUser)
+        })
+      }} />}
+      <header style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }} role="banner">
         <div style={{ display:'flex', alignItems:'center', gap:8, fontWeight:600, fontSize:15, letterSpacing:'-0.3px' }}>
           <i className="ti ti-home-dollar" style={{ fontSize:20, color:'#4da8ff' }} />
           Rental Analyst
@@ -420,14 +438,14 @@ const handleImport = async () => {
         {isPro && <span style={{ background:'#4da8ff', color:'#fff', fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10, letterSpacing:'0.5px' }}>PRO</span>}
         <div style={{ marginLeft:'auto', display:'flex', gap:4, alignItems:'center' }}>
           {['analyzer','portfolio'].map(t => (
-     <button key={t} onClick={() => setTab(t)} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{ padding:'6px 14px', borderRadius:6, fontSize:13, cursor:'pointer', border:'none', background:tab===t?'rgba(255,255,255,0.15)':'transparent', color:tab===t?'#fff':'rgba(255,255,255,0.55)', display:'flex', alignItems:'center', gap:6, fontFamily:'var(--font)' }}>
+            <button key={t} onClick={() => setTab(t)} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{ padding:'6px 14px', borderRadius:6, fontSize:13, cursor:'pointer', border:'none', background:tab===t?'rgba(255,255,255,0.15)':'transparent', color:tab===t?'#fff':'rgba(255,255,255,0.55)', display:'flex', alignItems:'center', gap:6, fontFamily:'var(--font)' }}>
               <i className={`ti ti-${t==='analyzer'?'calculator':'briefcase'}`} style={{ fontSize:14 }} />
               {t.charAt(0).toUpperCase()+t.slice(1)}
               {t==='portfolio' && saved.length>0 && <span style={{ background:'#4da8ff', color:'#fff', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:600 }}>{saved.length}</span>}
             </button>
           ))}
           {!isPro && (
-      <button onClick={() => openUpgrade('nav')} aria-label="Upgrade to Pro" style={{ marginLeft:8, padding:'6px 14px', background:'linear-gradient(135deg,#4da8ff,#1a5fa8)', color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', gap:5 }}>
+            <button onClick={() => openUpgrade('nav')} aria-label="Upgrade to Pro" style={{ marginLeft:8, padding:'6px 14px', background:'linear-gradient(135deg,#4da8ff,#1a5fa8)', color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', gap:5 }}>
               <i className="ti ti-bolt" style={{ fontSize:13 }} /> Go Pro
             </button>
           )}
@@ -453,22 +471,22 @@ const handleImport = async () => {
             <div style={{ border:'1px solid var(--border)', borderRadius:12, padding:12, marginBottom:14 }}>
               <SectionLabel icon="link">Import from Zillow</SectionLabel>
               <div style={{ display:'flex', gap:6 }}>
-               <input type="text" value={zillowUrl} onChange={e => setZillowUrl(e.target.value)} placeholder="Paste a Zillow listing URL…" aria-label="Zillow listing URL" style={{ flex:1, fontSize:12 }} />
+                <input type="text" value={zillowUrl} onChange={e => setZillowUrl(e.target.value)} placeholder="Paste a Zillow listing URL…" aria-label="Zillow listing URL" style={{ flex:1, fontSize:12 }} />
                 <button onClick={handleImport} disabled={importing} style={{ padding:'8px 12px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:6, fontSize:13, cursor:importing?'not-allowed':'pointer', fontWeight:500, fontFamily:'var(--font)', whiteSpace:'nowrap', opacity:importing?0.7:1 }}>
                   {importing?'Importing…':'Import'}
                 </button>
               </div>
- {toast && (
-  <div role="alert" aria-live="polite" style={{ marginTop:8, padding:'7px 10px', background:toast.type==='success'?'#eaf3de':'#faeeda', borderRadius:6, fontSize:12, color:toast.type==='success'?'#3b6d11':'#854f0b', display:'flex', gap:6, alignItems:'flex-start' }}>
-    <i className="ti ti-circle-check" style={{ fontSize:14, marginTop:1 }} />{toast.msg}
-  </div>
-)}
+              {toast && (
+                <div role="alert" aria-live="polite" style={{ marginTop:8, padding:'7px 10px', background:toast.type==='success'?'#eaf3de':'#faeeda', borderRadius:6, fontSize:12, color:toast.type==='success'?'#3b6d11':'#854f0b', display:'flex', gap:6, alignItems:'flex-start' }}>
+                  <i className="ti ti-circle-check" style={{ fontSize:14, marginTop:1 }} />{toast.msg}
+                </div>
+              )}
             </div>
-        <div style={{ marginBottom:14 }}>
-  <button onClick={handleSave} aria-label="Save property to portfolio" style={{ width:'100%', padding:'8px 12px', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, cursor:'pointer', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', gap:6, fontFamily:'var(--font)' }}>
-    <i className="ti ti-bookmark" /> Save property
-    {!isPro && <span style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)' }}>{saved.length}/{FREE_LIMIT}</span>}
-  </button>
+            <div style={{ marginBottom:14 }}>
+              <button onClick={handleSave} aria-label="Save property to portfolio" style={{ width:'100%', padding:'8px 12px', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, cursor:'pointer', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', gap:6, fontFamily:'var(--font)' }}>
+                <i className="ti ti-bookmark" /> Save property
+                {!isPro && <span style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)' }}>{saved.length}/{FREE_LIMIT}</span>}
+              </button>
               {!isPro && saved.length >= FREE_LIMIT && (
                 <div style={{ fontSize:11, color:'#a32d2d', marginTop:4, textAlign:'center' }}>
                   Free limit reached — <button onClick={() => openUpgrade('save')} style={{ background:'none', border:'none', color:'#1a5fa8', fontSize:11, cursor:'pointer', padding:0, fontFamily:'var(--font)', textDecoration:'underline' }}>upgrade to save more</button>
@@ -489,17 +507,17 @@ const handleImport = async () => {
               <Field label="Closing costs" id="closingPct" value={fields.closingPct} onChange={set('closingPct')} suffix="%" />
             </FieldRow>
             <Field label="Renovation budget" id="reno" value={fields.reno} onChange={set('reno')} prefix="$" />
-<div style={{ display:'flex', gap:6, marginTop:-6, marginBottom:12 }}>
-  {['Cash','Financed'].map(opt => (
-    <button key={opt} onClick={() => setFields(f => ({...f, renoFinanced: opt==='Financed'}))}
-      style={{ flex:1, padding:'6px', fontSize:12, fontWeight:500, borderRadius:6, cursor:'pointer', fontFamily:'var(--font)',
-        background: (opt==='Financed') === fields.renoFinanced ? '#1a5fa8' : 'var(--surface2)',
-        color: (opt==='Financed') === fields.renoFinanced ? '#fff' : 'var(--text2)',
-        border: '1px solid var(--border)' }}>
-      {opt}
-    </button>
-  ))}
-</div>
+            <div style={{ display:'flex', gap:6, marginTop:-6, marginBottom:12 }}>
+              {['Cash','Financed'].map(opt => (
+                <button key={opt} onClick={() => setFields(f => ({...f, renoFinanced: opt==='Financed'}))}
+                  style={{ flex:1, padding:'6px', fontSize:12, fontWeight:500, borderRadius:6, cursor:'pointer', fontFamily:'var(--font)',
+                    background: (opt==='Financed') === fields.renoFinanced ? '#1a5fa8' : 'var(--surface2)',
+                    color: (opt==='Financed') === fields.renoFinanced ? '#fff' : 'var(--text2)',
+                    border: '1px solid var(--border)' }}>
+                  {opt}
+                </button>
+              ))}
+            </div>
             <Divider />
             <SectionLabel icon="currency-dollar">Income</SectionLabel>
             <Field label="Monthly rent" id="rent" value={fields.rent} onChange={set('rent')} prefix="$" />
