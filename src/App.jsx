@@ -479,9 +479,7 @@ export default function App() {
   const set = (key) => (val) => setFields(f => ({ ...f, [key]: ['address','zip','neighborhood'].includes(key) ? val : (parseFloat(val) || 0) }))
   const activeRent = (sliderRent > 0 && sliderRent !== fields.rent) ? sliderRent : fields.rent
   const metrics = calcMetrics({ ...fields, rent: activeRent })
-  React.useEffect(() => {
-    console.log('[FIELDS CHANGED] rent:', fields.rent, 'price:', fields.price, 'rentRangeLow:', fields.rentRangeLow)
-  }, [fields.rent, fields.price])
+
 
   const showToast = (msg, type='success') => {
     clearTimeout(toastTimer.current)
@@ -547,16 +545,6 @@ export default function App() {
       const rentData = await rentRes.json()
       const prop = Array.isArray(propData) ? (propData[0] || {}) : (propData || {})
 
-      // Build a detailed debug summary of what came back
-      const debugLines = [
-        `Address: ${prop.formattedAddress || '❌ not found'}`,
-        `Rent est: ${rentData.rent ? '$'+Math.round(rentData.rent)+'/mo' : '❌ not found'}`,
-        `Assessed value: ${prop.assessedValue ? '$'+prop.assessedValue.toLocaleString() : '❌ not found'}`,
-        `List price: ${prop.price ? '$'+prop.price.toLocaleString() : '❌ not found'}`,
-        `Taxes: ${prop.propertyTaxes ? '$'+Math.round(prop.propertyTaxes/12)+'/mo' : '❌ not found'}`,
-        `City/Zip: ${prop.city || '—'} ${prop.zipCode || '—'}`,
-      ]
-      console.log('[RentCast Debug]', { propData, rentData })
 
       const importedFields = {}
       importedFields.address = prop.formattedAddress || address
@@ -575,9 +563,15 @@ export default function App() {
       if (!gotData && !prop.formattedAddress) {
         setImportAddress(address)
         setShowAddressFallback(true)
-        showToast('RentCast couldn\'t match that address. Edit it below and retry.', 'error')
+        showToast('Could not match that address. Edit it below and retry.', 'error')
       } else {
-        showToast(debugLines.join(' · '))
+        const imported = [
+          importedFields.address && 'Address',
+          importedFields.rent && 'Rent estimate',
+          importedFields.price && 'Price',
+          importedFields.taxes && 'Taxes',
+        ].filter(Boolean)
+        showToast('Imported: ' + imported.join(', '))
       }
     } catch (err) {
       setImportAddress(address)
