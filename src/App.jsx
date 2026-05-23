@@ -452,7 +452,7 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade }) {
 const DEFAULT_FIELDS = {
   address:'', zip:'', neighborhood:'',
   price:0, downPct:25, closingPct:3, reno:0, renoFinanced:false,
-  rent:0, vacancyPct:5,
+  rent:0, vacancyPct:5, rentRangeLow:0, rentRangeHigh:0,
   taxes:0, insurance:0, mgmtPct:10, maintenance:0,
   rate:7.25, term:30,
 }
@@ -559,8 +559,12 @@ export default function App() {
       importedFields.address = prop.formattedAddress || address
       if (prop.zipCode) importedFields.zip = String(prop.zipCode)
       if (prop.city) importedFields.neighborhood = prop.city
-      if (prop.price || prop.assessedValue) importedFields.price = parseFloat(prop.price || prop.assessedValue) || 0
+      // Only set price if RentCast actually has one — never overwrite with 0
+      const rentcastPrice = parseFloat(prop.price || prop.assessedValue) || 0
+      if (rentcastPrice > 0) importedFields.price = rentcastPrice
       if (rentData.rent) importedFields.rent = parseFloat(rentData.rent) || 0
+      if (rentData.rentRangeLow) importedFields.rentRangeLow = parseFloat(rentData.rentRangeLow) || 0
+      if (rentData.rentRangeHigh) importedFields.rentRangeHigh = parseFloat(rentData.rentRangeHigh) || 0
       if (prop.propertyTaxes) importedFields.taxes = Math.round((parseFloat(prop.propertyTaxes) || 0) / 12)
       setFields(f => ({ ...f, ...importedFields }))
 
@@ -731,6 +735,18 @@ export default function App() {
               <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', letterSpacing:'1px', textTransform:'uppercase', marginBottom:4 }}>Investment calculator</div>
               <div style={{ fontSize:20, fontWeight:600, marginBottom:2 }}>{fields.address||'Rental Property Analyzer'}</div>
               <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)' }}>{fields.neighborhood&&fields.zip?`${fields.neighborhood}, ${fields.zip}`:'Enter property details to analyze'}</div>
+              {fields.rentRangeLow > 0 && (
+                <div style={{ marginTop:8, display:'flex', gap:8, flexWrap:'wrap' }}>
+                  <span style={{ background:'rgba(255,255,255,0.1)', borderRadius:6, padding:'3px 10px', fontSize:12, color:'rgba(255,255,255,0.85)' }}>
+                    🏠 Market rent: ${fields.rentRangeLow.toLocaleString()}–${fields.rentRangeHigh.toLocaleString()}/mo
+                  </span>
+                  {fields.rent > 0 && (
+                    <span style={{ background: fields.rent >= fields.rentRangeLow ? 'rgba(26,122,74,0.4)' : 'rgba(163,45,45,0.4)', borderRadius:6, padding:'3px 10px', fontSize:12, color:'rgba(255,255,255,0.9)' }}>
+                      {fields.rent >= fields.rentRangeLow ? '✅ At or above market' : '⚠️ Below market range'}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:12, marginBottom:18 }}>
               {[
