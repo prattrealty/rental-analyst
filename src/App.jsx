@@ -369,12 +369,36 @@ export default function App() {
     showToast('🎉 Welcome to Pro! All features unlocked.')
   }
 
+  const extractAddressFromZillow = (url) => {
+    try {
+      // Zillow URLs look like: zillow.com/homedetails/123-Main-St-City-ST-12345/12345_zpid/
+      const match = url.match(/homedetails\/([^/]+)\//)
+      if (!match) return null
+      const slug = match[1]
+      // Remove the zpid portion if it snuck in, strip trailing digits
+      const cleaned = slug
+        .replace(/-\d+$/, '')       // remove trailing zip or id digits run
+        .replace(/-/g, ' ')          // dashes to spaces
+        .replace(/\b(\w)/g, c => c.toUpperCase()) // title case
+      return cleaned
+    } catch {
+      return null
+    }
+  }
+
   const handleImport = async () => {
-    if (!zillowUrl.trim()) return
+    const url = zillowUrl.trim()
+    if (!url) {
+      showToast('Paste a Zillow listing URL first.', 'error')
+      return
+    }
+    const address = extractAddressFromZillow(url)
+    if (!address) {
+      showToast('Could not read address from that URL. Try a full Zillow listing URL (e.g. zillow.com/homedetails/…)', 'error')
+      return
+    }
     setImporting(true)
     try {
-      const address = prompt('Enter the property address (e.g. 5200 McCallister St, Milton, FL 32583):')
-      if (!address) { setImporting(false); return }
       const encoded = encodeURIComponent(address)
       const apiKey = import.meta.env.VITE_RENTCAST_API_KEY
       const [propRes, rentRes] = await Promise.all([
@@ -385,8 +409,8 @@ export default function App() {
       const rentData = await rentRes.json()
       const prop = Array.isArray(propData) ? (propData[0] || {}) : (propData || {})
       const importedFields = {}
-      if (prop.formattedAddress || address) importedFields.address = prop.formattedAddress || address
-      if (prop.zipCode) importedFields.zip = prop.zipCode
+      importedFields.address = prop.formattedAddress || address
+      if (prop.zipCode) importedFields.zip = String(prop.zipCode)
       if (prop.city) importedFields.neighborhood = prop.city
       if (prop.price || prop.assessedValue) importedFields.price = parseFloat(prop.price || prop.assessedValue) || 0
       if (rentData.rent) importedFields.rent = parseFloat(rentData.rent) || 0
@@ -398,9 +422,9 @@ export default function App() {
         importedFields.price && 'Price',
         importedFields.taxes && 'Taxes',
       ].filter(Boolean)
-      showToast(`Imported: ${imported.length > 0 ? imported.join(', ') : 'Address only — enter remaining details manually'}`)
+      showToast(`Imported: ${imported.join(', ')}`)
     } catch (err) {
-      showToast('Could not fetch property data. Please enter manually.', 'error')
+      showToast('Could not fetch property data. Check your URL and try again.', 'error')
     } finally {
       setImporting(false)
     }
