@@ -198,6 +198,87 @@ function CompsCard({ comps, loading }) {
   )
 }
 
+function WalkthroughBubble({ onDone }) {
+  const [step, setStep] = React.useState(0)
+  const steps = [
+    {
+      icon: 'ti-link',
+      title: 'Paste a Zillow URL',
+      body: 'Copy any Zillow listing URL and paste it into the Import box. We'll pull the address and rent estimate automatically.',
+      highlight: 'top-left',
+    },
+    {
+      icon: 'ti-calculator',
+      title: 'Enter the purchase price',
+      body: 'RentCast doesn't have live listing prices yet — just type in the price from Zillow. Everything else calculates instantly.',
+      highlight: 'top-left',
+    },
+    {
+      icon: 'ti-chart-bar',
+      title: 'Read your Deal Score',
+      body: 'Your Deal Score (0–100) grades the investment on cap rate, cash flow, CoC return, and more. Drag the rent slider to stress-test the numbers.',
+      highlight: 'right',
+    },
+  ]
+  const s = steps[step]
+  const isLast = step === steps.length - 1
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 2000, pointerEvents: 'none' }}>
+      {/* Backdrop */}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', pointerEvents: 'auto' }} onClick={onDone} />
+      {/* Bubble */}
+      <div style={{
+        position: 'absolute',
+        top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        background: 'var(--surface)',
+        borderRadius: 16,
+        width: 360,
+        boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
+        overflow: 'hidden',
+        pointerEvents: 'auto',
+      }}>
+        {/* Header */}
+        <div style={{ background: 'var(--navy)', padding: '24px 24px 20px', color: '#fff', position: 'relative' }}>
+          <button onClick={onDone} style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', width: 28, height: 28, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font)' }}>
+            <i className="ti ti-x" />
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(77,168,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className={`ti ${s.icon}`} style={{ fontSize: 22, color: '#4da8ff' }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 2 }}>Step {step + 1} of {steps.length}</div>
+              <div style={{ fontSize: 17, fontWeight: 700 }}>{s.title}</div>
+            </div>
+          </div>
+          {/* Progress dots */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {steps.map((_, i) => (
+              <div key={i} style={{ height: 3, flex: 1, borderRadius: 2, background: i <= step ? '#4da8ff' : 'rgba(255,255,255,0.2)', transition: 'background 0.3s' }} />
+            ))}
+          </div>
+        </div>
+        {/* Body */}
+        <div style={{ padding: '20px 24px 24px' }}>
+          <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, margin: '0 0 20px' }}>{s.body}</p>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            {step > 0 && (
+              <button onClick={() => setStep(s => s - 1)} style={{ padding: '9px 16px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, cursor: 'pointer', color: 'var(--text2)', fontFamily: 'var(--font)' }}>
+                Back
+              </button>
+            )}
+            <button onClick={() => isLast ? onDone() : setStep(s => s + 1)} style={{ padding: '9px 20px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+              {isLast ? "Let's go! 🚀" : 'Next →'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SignupModal({ onClose, form, setForm, onSubmit, error }) {
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
@@ -459,6 +540,7 @@ const DEFAULT_FIELDS = {
 
 export default function App() {
   const [tab, setTab] = useState('analyzer')
+  const [showWalkthrough, setShowWalkthrough] = useState(() => !localStorage.getItem('ra_toured'))
   const [fields, setFields] = useState(DEFAULT_FIELDS)
   const [zillowUrl, setZillowUrl] = useState('')
   const [importing, setImporting] = useState(false)
@@ -596,6 +678,7 @@ export default function App() {
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
       <a href="#main-content" className="skip-nav">Skip to main content</a>
+      {showWalkthrough && <WalkthroughBubble onDone={() => { setShowWalkthrough(false); localStorage.setItem('ra_toured', '1') }} />}
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={handleUpgrade} />}
       {showSignup && <SignupModal onClose={() => setShowSignup(false)} form={signupForm} setForm={setSignupForm} error={signupError} onSubmit={() => {
         if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
