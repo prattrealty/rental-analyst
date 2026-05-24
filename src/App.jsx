@@ -193,11 +193,17 @@ function DealScoreCard({ metrics }) {
 }
 
 function RentSlider({ rent, onChange }) {
-  const base = rent || 1500
-  const min = Math.max(0, Math.round(base * 0.7))
+  const base = (rent && rent > 100) ? rent : 1500
+  const min = Math.max(100, Math.round(base * 0.7))
   const max = Math.round(base * 1.3)
   const [val, setVal] = React.useState(base)
-  React.useEffect(() => { setVal(base) }, [base])
+  const prevBase = React.useRef(base)
+  React.useEffect(() => {
+    if (prevBase.current !== base) {
+      prevBase.current = base
+      setVal(base)
+    }
+  }, [base])
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', marginBottom: 18 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -958,7 +964,7 @@ export default function App() {
                   <div style={{ fontSize:12, color:'#1a5fa8' }}>A 0–100 score based on cap rate, cash flow, CoC return, and more.</div>
                 </div>
             }
-            <RentSlider rent={activeRent || 1500} onChange={v => setSliderRent(v)} />
+            <RentSlider rent={fields.rent || 1500} onChange={v => setSliderRent(v)} />
             <CompsCard comps={comps} loading={compsLoading} />
             <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'20px 20px 10px' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:2 }}>
