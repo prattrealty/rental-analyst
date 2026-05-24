@@ -311,7 +311,7 @@ function SignupModal({ onClose, form, setForm, onSubmit, error }) {
             Create Free Account
           </button>
           <div style={{ textAlign:'center', fontSize:11, color:'var(--text3)', marginTop:10 }}>
-            We respect your privacy · No credit card required
+            We respect your privacy · No credit card required · <a href='/privacy.html' target='_blank' style={{ color:'#1a5fa8', textDecoration:'none' }}>Privacy Policy</a>
           </div>
         </div>
       </div>
