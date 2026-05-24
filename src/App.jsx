@@ -899,7 +899,7 @@ export default function App() {
                 </div>
               ))}
             </div>
-            {metrics.price > 0 && metrics.rent > 0 && (
+            {metrics.price > 0 && fields.rent > 0 && (
               <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'18px 20px', marginBottom:18 }}>
                 <div style={{ fontSize:13, fontWeight:600, marginBottom:14, display:'flex', alignItems:'center', gap:6 }}>
                   <i className="ti ti-chart-pie" style={{ fontSize:15, color:'#1a5fa8' }} /> Investor Metrics
