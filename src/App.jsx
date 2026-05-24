@@ -210,13 +210,13 @@ function WalkthroughBubble({ onDone }) {
     {
       icon: 'ti-calculator',
       title: 'Enter the purchase price',
-      body: 'RentCast doesn't have live listing prices yet — just type in the price from Zillow. Everything else calculates instantly.',
+        body: "RentCast does not have live listing prices yet - just type in the price from Zillow. Everything else calculates instantly.",
       highlight: 'top-left',
     },
     {
       icon: 'ti-chart-bar',
       title: 'Read your Deal Score',
-      body: 'Your Deal Score (0–100) grades the investment on cap rate, cash flow, CoC return, and more. Drag the rent slider to stress-test the numbers.',
+        body: "Your Deal Score (0-100) grades the investment on cap rate, cash flow, CoC return, and more. Drag the rent slider to stress-test the numbers.",
       highlight: 'right',
     },
   ]
