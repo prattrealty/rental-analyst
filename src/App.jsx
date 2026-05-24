@@ -22,11 +22,15 @@ function calcMetrics(f) {
   const rent = f.rent || 0
   const vacancyPct = f.vacancyPct || 0
   const taxes = f.taxes || 0
-  const insurance = f.insurance || 0
   const mgmtPct = f.mgmtPct || 0
-  const maintenance = f.maintenance || 0
   const rate = f.rate || 0
   const term = f.term || 30
+  const rentGrowth = (f.rentGrowth !== undefined ? f.rentGrowth : 2.5) / 100
+  const appreciation = (f.appreciation !== undefined ? f.appreciation : 3.0) / 100
+
+  // Smart defaults: if user hasn't set insurance/maintenance, estimate from price
+  const insurance = f.insurance > 0 ? f.insurance : (price > 0 ? Math.round(price * 0.008 / 12) : 0)
+  const maintenance = f.maintenance > 0 ? f.maintenance : (price > 0 ? Math.round(price * 0.01 / 12) : 0)
 
   const down = price * (downPct / 100)
   const closing = price * (closingPct / 100)
@@ -43,21 +47,60 @@ function calcMetrics(f) {
   const coc = totalCashIn > 0 ? (annualCF / totalCashIn) * 100 : 0
   const grossYield = price > 0 ? (rent * 12 / price) * 100 : 0
   const breakeven = totalExpenses + monthlyMortgage
+  const dscr = monthlyMortgage > 0 ? noi / monthlyMortgage : 0
+  const onePercentRule = price > 0 ? (rent / price) * 100 : 0
+  const onePercentPass = onePercentRule >= 1
+
+  // IRR calculation (10-year hold)
   const r = rate / 100 / 12
   const n = term * 12
   let balance = loanAmt
   const chartData = []
+  const annualCashFlows = [-totalCashIn] // initial outflow
+
   for (let yr = 1; yr <= 10; yr++) {
-    const growth = Math.pow(1 + 0.025, yr - 1)
+    const growth = Math.pow(1 + rentGrowth, yr - 1)
+    let yearCF = 0
     for (let m = 0; m < 12; m++) {
       const interest = balance * r
       const pmt = r === 0 ? loanAmt / n : loanAmt * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
       balance = Math.max(0, balance - (pmt - interest))
+      yearCF += cashflow * growth
     }
-    const appreciated = price * Math.pow(1.03, yr)
-    chartData.push({ year: `Yr ${yr}`, cashflow: Math.round(cashflow * growth), noi: Math.round(noi * growth), equity: Math.round((appreciated - balance) / 1000) })
+    const appreciated = price * Math.pow(1 + appreciation, yr)
+    const equity = appreciated - balance
+    chartData.push({ year: 'Yr ' + yr, cashflow: Math.round(cashflow * growth), noi: Math.round(noi * growth), equity: Math.round(equity / 1000) })
+    if (yr === 10) {
+      // Terminal value: sale proceeds after paying off loan
+      annualCashFlows.push(yearCF + (appreciated - balance - appreciated * 0.06))
+    } else {
+      annualCashFlows.push(yearCF)
+    }
   }
-  return { price, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF, capRate, coc, grossYield, breakeven, chartData }
+
+  // Simple IRR via Newton's method
+  let irr = 0
+  try {
+    let guess = 0.1
+    for (let i = 0; i < 100; i++) {
+      let npv = 0, dnpv = 0
+      annualCashFlows.forEach((cf, t) => {
+        npv += cf / Math.pow(1 + guess, t)
+        dnpv -= t * cf / Math.pow(1 + guess, t + 1)
+      })
+      const next = guess - npv / dnpv
+      if (Math.abs(next - guess) < 0.0001) { guess = next; break }
+      guess = next
+    }
+    irr = guess * 100
+  } catch(e) { irr = 0 }
+
+  // Equity multiple (total cash returned / cash invested)
+  const yr10Equity = chartData[9]?.equity * 1000 || 0
+  const totalReturn = annualCashFlows.slice(1).reduce((s, v) => s + v, 0)
+  const equityMultiple = totalCashIn > 0 ? (totalReturn + totalCashIn) / totalCashIn : 0
+
+  return { price, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF, capRate, coc, grossYield, breakeven, dscr, onePercentRule, onePercentPass, irr, equityMultiple, insurance, maintenance, chartData, rentGrowth: rentGrowth * 100, appreciation: appreciation * 100 }
 }
 
 
@@ -83,9 +126,14 @@ function calcDealScore(metrics) {
   breakdown.push({ label: 'Monthly cash flow', score: cfPts, max: 15, value: '$' + Math.round(metrics.cashflow) + '/mo' })
 
   const beRatio = metrics.breakeven > 0 ? metrics.cashflow / metrics.breakeven : 0
-  const bePts = beRatio >= 0.15 ? 10 : beRatio >= 0.05 ? 7 : beRatio >= 0 ? 3 : 0
+  const bePts = beRatio >= 0.15 ? 7 : beRatio >= 0.05 ? 5 : beRatio >= 0 ? 2 : 0
   score += bePts
-  breakdown.push({ label: 'Break-even buffer', score: bePts, max: 10, value: (beRatio * 100).toFixed(1) + '% above break-even' })
+  breakdown.push({ label: 'Break-even buffer', score: bePts, max: 7, value: (beRatio * 100).toFixed(1) + '% above break-even' })
+
+  // DSCR (8pts)
+  const dscrPts = metrics.dscr >= 1.25 ? 8 : metrics.dscr >= 1.0 ? 5 : metrics.dscr >= 0.8 ? 2 : 0
+  score += dscrPts
+  breakdown.push({ label: 'DSCR', score: dscrPts, max: 8, value: metrics.dscr.toFixed(2) + 'x' })
 
   const grade = score >= 75
     ? { label: 'Strong Deal', color: '#1a7a4a', bg: '#eaf3de', emoji: '🟢' }
@@ -536,6 +584,7 @@ const DEFAULT_FIELDS = {
   rent:0, vacancyPct:5, rentRangeLow:0, rentRangeHigh:0,
   taxes:0, insurance:0, mgmtPct:10, maintenance:0,
   rate:7.25, term:30,
+  rentGrowth:2.5, appreciation:3.0,
 }
 
 export default function App() {
@@ -809,6 +858,15 @@ export default function App() {
             <SectionLabel icon="building-bank">Financing</SectionLabel>
             <Field label="Interest rate" id="rate" value={fields.rate} onChange={set('rate')} suffix="%" />
             <Field label="Loan term" id="term" value={fields.term} onChange={set('term')} suffix="yrs" />
+            <Divider />
+            <SectionLabel icon="trending-up">Projection Assumptions</SectionLabel>
+            <FieldRow>
+              <Field label="Rent growth" id="rentGrowth" value={fields.rentGrowth} onChange={set('rentGrowth')} suffix="%" />
+              <Field label="Appreciation" id="appreciation" value={fields.appreciation} onChange={set('appreciation')} suffix="%" />
+            </FieldRow>
+            <div style={{ fontSize:11, color:'var(--text3)', marginTop:-6, marginBottom:8, lineHeight:1.5 }}>
+              Annual rates used in 10-year projection. National avg: 2-3% rent growth, 3-4% appreciation.
+            </div>
           </div>
           <div style={{ flex:1, overflowY:'auto', padding:24 }}>
             <div style={{ background:'var(--navy)', color:'#fff', borderRadius:12, padding:'18px 22px', marginBottom:18 }}>
@@ -841,6 +899,57 @@ export default function App() {
                 </div>
               ))}
             </div>
+            {metrics.price > 0 && metrics.rent > 0 && (
+              <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'18px 20px', marginBottom:18 }}>
+                <div style={{ fontSize:13, fontWeight:600, marginBottom:14, display:'flex', alignItems:'center', gap:6 }}>
+                  <i className="ti ti-chart-pie" style={{ fontSize:15, color:'#1a5fa8' }} /> Investor Metrics
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))', gap:10 }}>
+                  {[
+                    {
+                      label:'DSCR',
+                      value: metrics.dscr.toFixed(2) + 'x',
+                      sub: metrics.dscr >= 1.25 ? 'Lender approved' : metrics.dscr >= 1.0 ? 'Borderline' : 'Below threshold',
+                      color: metrics.dscr >= 1.25 ? 'var(--green)' : metrics.dscr >= 1.0 ? 'var(--amber)' : 'var(--red)',
+                      tip: 'Debt Service Coverage Ratio — lenders want 1.25x+'
+                    },
+                    {
+                      label:'1% Rule',
+                      value: metrics.onePercentRule.toFixed(2) + '%',
+                      sub: metrics.onePercentPass ? 'Passes' : 'Does not pass',
+                      color: metrics.onePercentPass ? 'var(--green)' : 'var(--red)',
+                      tip: 'Monthly rent / purchase price. 1%+ is ideal.'
+                    },
+                    {
+                      label:'IRR (10yr)',
+                      value: isNaN(metrics.irr) || !isFinite(metrics.irr) ? 'N/A' : metrics.irr.toFixed(1) + '%',
+                      sub: metrics.irr >= 12 ? 'Strong' : metrics.irr >= 8 ? 'Good' : 'Below avg',
+                      color: metrics.irr >= 12 ? 'var(--green)' : metrics.irr >= 8 ? 'var(--amber)' : 'var(--red)',
+                      tip: 'Internal Rate of Return over 10 years including sale'
+                    },
+                    {
+                      label:'Equity Multiple',
+                      value: isNaN(metrics.equityMultiple) ? 'N/A' : metrics.equityMultiple.toFixed(2) + 'x',
+                      sub: metrics.equityMultiple >= 2 ? 'Strong' : metrics.equityMultiple >= 1.5 ? 'Good' : 'Low',
+                      color: metrics.equityMultiple >= 2 ? 'var(--green)' : metrics.equityMultiple >= 1.5 ? 'var(--amber)' : 'var(--red)',
+                      tip: 'Total return / cash invested over 10 years'
+                    },
+                  ].map(m => (
+                    <div key={m.label} title={m.tip} style={{ background:'var(--surface2)', borderRadius:8, padding:'12px 14px', cursor:'help' }}>
+                      <div style={{ fontSize:11, color:'var(--text2)', marginBottom:2 }}>{m.label} <i className="ti ti-info-circle" style={{ fontSize:10, color:'var(--text3)' }} /></div>
+                      <div style={{ fontSize:18, fontWeight:700, color:m.color }}>{m.value}</div>
+                      <div style={{ fontSize:11, color:m.color, marginTop:2 }}>{m.sub}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop:14, paddingTop:12, borderTop:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                  <div style={{ fontSize:11, color:'var(--text2)', fontWeight:500 }}>Est. expenses:</div>
+                  <span style={{ fontSize:11, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:4, padding:'2px 8px' }}>Insurance: {fmt(metrics.insurance)}/mo</span>
+                  <span style={{ fontSize:11, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:4, padding:'2px 8px' }}>Maintenance: {fmt(metrics.maintenance)}/mo</span>
+                  <span style={{ fontSize:10, color:'var(--text3)' }}>(auto-estimated from price — override in fields)</span>
+                </div>
+              </div>
+            )}
             {metrics.price > 0
               ? <DealScoreCard metrics={metrics} />
               : <div style={{ background:'#f0f7ff', border:'2px dashed #c0d8f0', borderRadius:12, padding:'18px 22px', marginBottom:18, textAlign:'center' }}>
@@ -861,7 +970,7 @@ export default function App() {
                   </button>
                 )}
               </div>
-              <div style={{ fontSize:12, color:'var(--text2)', marginBottom:16 }}>10-year projection · 2.5% annual rent growth · 3% appreciation</div>
+              <div style={{ fontSize:12, color:'var(--text2)', marginBottom:16 }}>10-year projection · {fields.rentGrowth}% annual rent growth · {fields.appreciation}% appreciation</div>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={metrics.chartData} margin={{ top:4, right:60, left:0, bottom:0 }} barGap={2}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
