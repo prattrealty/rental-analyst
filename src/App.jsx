@@ -379,7 +379,7 @@ function UpgradeModal({ onClose, trigger, onUpgrade }) {
     { icon: 'ti-chart-bar', label: 'Full portfolio dashboard', free: false, pro: true },
     { icon: 'ti-file-description', label: 'PDF report export', free: false, pro: true },
     { icon: 'ti-history', label: 'Rent comp history', free: false, pro: true },
-    { icon: 'ti-link', label: 'Zillow import', free: true, pro: true },
+    { icon: 'ti-link', label: 'Zillow URL import', free: false, pro: true },
     { icon: 'ti-calculator', label: 'All metrics & charts', free: true, pro: true },
   ]
   return (
@@ -673,11 +673,12 @@ export default function App() {
     setShowAddressFallback(false)
     try {
       const encoded = encodeURIComponent(address)
-      const apiKey = import.meta.env.VITE_RENTCAST_API_KEY
+      const base = '/api/rentcast'
       const [propRes, rentRes] = await Promise.all([
-        fetch(`https://api.rentcast.io/v1/properties?address=${encoded}&limit=1`, { headers: { 'X-Api-Key': apiKey } }),
-        fetch(`https://api.rentcast.io/v1/avm/rent/long-term?address=${encoded}`, { headers: { 'X-Api-Key': apiKey } })
+        fetch(`${base}?endpoint=properties&address=${encoded}&limit=1`),
+        fetch(`${base}?endpoint=avm/rent/long-term&address=${encoded}`)
       ])
+      if (propRes.status === 429) { showToast('Too many requests — please wait a moment and try again.', 'error'); setImporting(false); return }
       const propData = await propRes.json()
       const rentData = await rentRes.json()
       const prop = Array.isArray(propData) ? (propData[0] || {}) : (propData || {})
@@ -722,6 +723,7 @@ export default function App() {
   const handleImport = async () => {
     const url = zillowUrl.trim()
     if (!url) { showToast('Paste a Zillow listing URL first.', 'error'); return }
+    if (!isPro) { openUpgrade('import'); return }
     const address = extractAddressFromZillow(url)
     if (!address) { showToast('Could not read address from that URL. Try a full Zillow listing URL (e.g. zillow.com/homedetails/…)', 'error'); return }
     setImportAddress(address)
@@ -795,8 +797,8 @@ export default function App() {
               <SectionLabel icon="link">Import from Zillow</SectionLabel>
               <div style={{ display:'flex', gap:6 }}>
                 <input type="text" value={zillowUrl} onChange={e => setZillowUrl(e.target.value)} placeholder="Paste a Zillow listing URL…" aria-label="Zillow listing URL" style={{ flex:1, fontSize:12 }} />
-                <button onClick={handleImport} disabled={importing} style={{ padding:'8px 12px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:6, fontSize:13, cursor:importing?'not-allowed':'pointer', fontWeight:500, fontFamily:'var(--font)', whiteSpace:'nowrap', opacity:importing?0.7:1 }}>
-                  {importing?'Importing…':'Import'}
+                <button onClick={handleImport} disabled={importing} style={{ padding:'8px 12px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:6, fontSize:13, cursor:importing?'not-allowed':'pointer', fontWeight:500, fontFamily:'var(--font)', whiteSpace:'nowrap', opacity:importing?0.7:1, display:'flex', alignItems:'center', gap:5 }}>
+                  {importing ? 'Importing…' : isPro ? 'Import' : <><i className="ti ti-bolt" style={{fontSize:12}}/> Pro</>}
                 </button>
               </div>
               {showAddressFallback && (
