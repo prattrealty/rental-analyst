@@ -258,7 +258,7 @@ function WalkthroughBubble({ onDone }) {
     {
       icon: 'ti-link',
       title: 'Paste a Zillow URL',
-      body: "Copy any Zillow listing URL and paste it into the Import box. We'll pull the address and rent estimate automatically.",
+      body: "Analyze any property by entering the address — or import from Zillow with Pro.",
       highlight: 'top-left',
     },
     {
