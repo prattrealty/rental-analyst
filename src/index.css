@@ -102,29 +102,15 @@ button:focus-visible {
     min-width: 100% !important;
     border-right: none !important;
     border-bottom: 1px solid var(--border);
-    max-height: none !important;
-    overflow-y: visible;
-    padding-bottom: 16px;
+    max-height: 50vh;
+    overflow-y: auto;
   }
   .metrics-bar {
     flex-wrap: wrap;
-    gap: 8px;
-    padding: 8px !important;
   }
   .metrics-bar > div {
-    min-width: calc(50% - 8px) !important;
+    min-width: 45% !important;
     border-right: none !important;
-    border-bottom: none !important;
-    border-radius: 8px;
-  }
-  body {
-    font-size: 15px;
-  }
-  input[type="text"],
-  input[type="number"],
-  input[type="email"],
-  input[type="password"] {
-    font-size: 16px !important;
-    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
   }
 }
