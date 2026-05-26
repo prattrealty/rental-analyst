@@ -5,7 +5,7 @@ const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency:
 const fmtK = (n) => n >= 1000 ? `$${Math.round(n / 1000)}K` : fmt(n)
 const fmtPct = (n) => isNaN(n) ? '0.00%' : `${n.toFixed(2)}%`
 const FREE_LIMIT = 2
-const PRO_PRICE = 7
+const PRO_PRICE = 7.99
 
 function calcMortgage(principal, annualRate, years) {
   const r = annualRate / 100 / 12
