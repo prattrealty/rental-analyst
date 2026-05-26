@@ -1,6 +1,10 @@
 import React, { useState, useRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js');
+  });
+}
 const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 const fmtK = (n) => n >= 1000 ? `$${Math.round(n / 1000)}K` : fmt(n)
 const fmtPct = (n) => isNaN(n) ? '0.00%' : `${n.toFixed(2)}%`
