@@ -608,12 +608,7 @@ const DEFAULT_FIELDS = {
 
 export default function App() {
   const [tab, setTab] = useState('analyzer')
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
-  React.useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth <= 768)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
-  }, [])
+
   const [showWalkthrough, setShowWalkthrough] = useState(() => !localStorage.getItem('ra_toured'))
   const [fields, setFields] = useState(DEFAULT_FIELDS)
   const [zillowUrl, setZillowUrl] = useState('')
@@ -815,8 +810,8 @@ export default function App() {
             <div style={{ border:'1px solid var(--border)', borderRadius:12, padding:12, marginBottom:14 }}>
               <SectionLabel icon="link">Import from Zillow</SectionLabel>
               <div style={{ display:'flex', gap:6 }}>
-                <input type="text" value={zillowUrl} onChange={e => setZillowUrl(e.target.value)} placeholder="Paste a Zillow listing URL…" aria-label="Zillow listing URL" style={{ flex:1, fontSize:12 }} />
-                <button onClick={handleImport} disabled={importing} style={{ padding:'8px 12px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:6, fontSize:13, cursor:importing?'not-allowed':'pointer', fontWeight:500, fontFamily:'var(--font)', whiteSpace:'nowrap', opacity:importing?0.7:1, display:'flex', alignItems:'center', gap:5 }}>
+                <main id="main-content" style={{ display:'flex', flex:1, overflow:'hidden' }}>
+               <div style={{ width:280, minWidth:280, background:'var(--surface)', borderRight:'1px solid var(--border)', overflowY:'auto', padding:16 }}>
                   {importing ? 'Importing…' : isPro ? 'Import' : <><i className="ti ti-bolt" style={{fontSize:12}}/> Pro</>}
                 </button>
               </div>
