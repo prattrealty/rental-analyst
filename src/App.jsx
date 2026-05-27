@@ -608,7 +608,7 @@ const DEFAULT_FIELDS = {
 
 export default function App() {
   const [tab, setTab] = useState('analyzer')
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= 768)
   React.useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth <= 768)
     window.addEventListener('resize', handler)
