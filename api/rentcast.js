@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       headers: { 'X-Api-Key': apiKey }
     })
     const data = await response.json()
-    res.setHeader('Cache-Control', 's-maxage=3600')
+    res.setHeader('Cache-Control', 's-maxage=86400')
     return res.status(response.status).json(data)
   } catch (err) {
     return res.status(500).json({ error: 'Server error' })
