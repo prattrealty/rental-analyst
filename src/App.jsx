@@ -32,7 +32,6 @@ function calcMetrics(f) {
   const rentGrowth = (f.rentGrowth !== undefined ? f.rentGrowth : 2.5) / 100
   const appreciation = (f.appreciation !== undefined ? f.appreciation : 3.0) / 100
 
-  // Smart defaults: if user hasn't set insurance/maintenance, estimate from price
   const insurance = f.insurance > 0 ? f.insurance : (price > 0 ? Math.round(price * 0.008 / 12) : 0)
   const maintenance = f.maintenance > 0 ? f.maintenance : (price > 0 ? Math.round(price * 0.01 / 12) : 0)
 
@@ -55,12 +54,11 @@ function calcMetrics(f) {
   const onePercentRule = price > 0 ? (rent / price) * 100 : 0
   const onePercentPass = onePercentRule >= 1
 
-  // IRR calculation (10-year hold)
   const r = rate / 100 / 12
   const n = term * 12
   let balance = loanAmt
   const chartData = []
-  const annualCashFlows = [-totalCashIn] // initial outflow
+  const annualCashFlows = [-totalCashIn]
 
   for (let yr = 1; yr <= 10; yr++) {
     const growth = Math.pow(1 + rentGrowth, yr - 1)
@@ -75,14 +73,12 @@ function calcMetrics(f) {
     const equity = appreciated - balance
     chartData.push({ year: 'Yr ' + yr, cashflow: Math.round(cashflow * growth), noi: Math.round(noi * growth), equity: Math.round(equity / 1000) })
     if (yr === 10) {
-      // Terminal value: sale proceeds after paying off loan
       annualCashFlows.push(yearCF + (appreciated - balance - appreciated * 0.06))
     } else {
       annualCashFlows.push(yearCF)
     }
   }
 
-  // Simple IRR via Newton's method
   let irr = 0
   try {
     let guess = 0.1
@@ -99,14 +95,11 @@ function calcMetrics(f) {
     irr = guess * 100
   } catch(e) { irr = 0 }
 
-  // Equity multiple (total cash returned / cash invested)
-  const yr10Equity = chartData[9]?.equity * 1000 || 0
   const totalReturn = annualCashFlows.slice(1).reduce((s, v) => s + v, 0)
   const equityMultiple = totalCashIn > 0 ? (totalReturn + totalCashIn) / totalCashIn : 0
 
   return { price, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF, capRate, coc, grossYield, breakeven, dscr, onePercentRule, onePercentPass, irr, equityMultiple, insurance, maintenance, chartData, rentGrowth: rentGrowth * 100, appreciation: appreciation * 100 }
 }
-
 
 function calcDealScore(metrics) {
   if (metrics.price <= 0 || metrics.rent <= 0) return null
@@ -134,7 +127,6 @@ function calcDealScore(metrics) {
   score += bePts
   breakdown.push({ label: 'Break-even buffer', score: bePts, max: 7, value: (beRatio * 100).toFixed(1) + '% above break-even' })
 
-  // DSCR (8pts)
   const dscrPts = metrics.dscr >= 1.25 ? 8 : metrics.dscr >= 1.0 ? 5 : metrics.dscr >= 0.8 ? 2 : 0
   score += dscrPts
   breakdown.push({ label: 'DSCR', score: dscrPts, max: 8, value: metrics.dscr.toFixed(2) + 'x' })
@@ -268,13 +260,13 @@ function WalkthroughBubble({ onDone }) {
     {
       icon: 'ti-calculator',
       title: 'Enter the purchase price',
-        body: "RentCast does not have live listing prices yet - just type in the price from Zillow. Everything else calculates instantly.",
+      body: "RentCast does not have live listing prices yet - just type in the price from Zillow. Everything else calculates instantly.",
       highlight: 'top-left',
     },
     {
       icon: 'ti-chart-bar',
       title: 'Read your Deal Score',
-        body: "Your Deal Score (0-100) grades the investment on cap rate, cash flow, CoC return, and more. Drag the rent slider to stress-test the numbers.",
+      body: "Your Deal Score (0-100) grades the investment on cap rate, cash flow, CoC return, and more. Drag the rent slider to stress-test the numbers.",
       highlight: 'right',
     },
   ]
@@ -283,9 +275,7 @@ function WalkthroughBubble({ onDone }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 2000, pointerEvents: 'none' }}>
-      {/* Backdrop */}
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', pointerEvents: 'auto' }} onClick={onDone} />
-      {/* Bubble */}
       <div style={{
         position: 'absolute',
         top: '50%', left: '50%',
@@ -297,7 +287,6 @@ function WalkthroughBubble({ onDone }) {
         overflow: 'hidden',
         pointerEvents: 'auto',
       }}>
-        {/* Header */}
         <div style={{ background: 'var(--navy)', padding: '24px 24px 20px', color: '#fff', position: 'relative' }}>
           <button onClick={onDone} style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', width: 28, height: 28, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font)' }}>
             <i className="ti ti-x" />
@@ -311,14 +300,12 @@ function WalkthroughBubble({ onDone }) {
               <div style={{ fontSize: 17, fontWeight: 700 }}>{s.title}</div>
             </div>
           </div>
-          {/* Progress dots */}
           <div style={{ display: 'flex', gap: 6 }}>
             {steps.map((_, i) => (
               <div key={i} style={{ height: 3, flex: 1, borderRadius: 2, background: i <= step ? '#4da8ff' : 'rgba(255,255,255,0.2)', transition: 'background 0.3s' }} />
             ))}
           </div>
         </div>
-        {/* Body */}
         <div style={{ padding: '20px 24px 24px' }}>
           <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, margin: '0 0 20px' }}>{s.body}</p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -387,14 +374,14 @@ function UpgradeModal({ onClose, trigger, onUpgrade }) {
     { icon: 'ti-calculator', label: 'All metrics & charts', free: true, pro: true },
   ]
   const handleStripeCheckout = async () => {
-  try {
-    const res = await fetch('/api/stripe-checkout', { method: 'POST' });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
-  } catch (err) {
-    alert('Something went wrong. Please try again.');
-  }
-};
+    try {
+      const res = await fetch('/api/stripe-checkout', { method: 'POST' });
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      alert('Something went wrong. Please try again.');
+    }
+  };
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 520, overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.3)' }}>
@@ -608,7 +595,7 @@ const DEFAULT_FIELDS = {
 
 export default function App() {
   const [tab, setTab] = useState('analyzer')
-
+  const [isMobile, setIsMobile] = useState(false)
   const [showWalkthrough, setShowWalkthrough] = useState(() => !localStorage.getItem('ra_toured'))
   const [fields, setFields] = useState(DEFAULT_FIELDS)
   const [zillowUrl, setZillowUrl] = useState('')
@@ -627,10 +614,16 @@ export default function App() {
   const [sliderRent, setSliderRent] = useState(0)
   const toastTimer = useRef(null)
 
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   const set = (key) => (val) => setFields(f => ({ ...f, [key]: ['address','zip','neighborhood'].includes(key) ? val : (parseFloat(val) || 0) }))
   const activeRent = (sliderRent > 0 && sliderRent !== fields.rent) ? sliderRent : fields.rent
   const metrics = calcMetrics({ ...fields, rent: activeRent })
-
 
   const showToast = (msg, type='success') => {
     clearTimeout(toastTimer.current)
@@ -672,7 +665,7 @@ export default function App() {
       if (!match) return null
       const slug = match[1]
       const cleaned = slug
-        .replace(/-\d{5}(\d*)$/, m => m.replace(/-/, ' '))  // preserve zip
+        .replace(/-\d{5}(\d*)$/, m => m.replace(/-/, ' '))
         .replace(/-/g, ' ')
         .replace(/\b(\w)/g, c => c.toUpperCase())
         .replace(/\s+/g, ' ').trim()
@@ -697,12 +690,10 @@ export default function App() {
       const rentData = await rentRes.json()
       const prop = Array.isArray(propData) ? (propData[0] || {}) : (propData || {})
 
-
       const importedFields = {}
       importedFields.address = prop.formattedAddress || address
       if (prop.zipCode) importedFields.zip = String(prop.zipCode)
       if (prop.city) importedFields.neighborhood = prop.city
-      // Only set price if RentCast actually has one — never overwrite with 0
       const rentcastPrice = parseFloat(prop.price || prop.assessedValue) || 0
       if (rentcastPrice > 0) importedFields.price = rentcastPrice
       if (rentData.rent) importedFields.rent = parseFloat(rentData.rent) || 0
@@ -805,13 +796,13 @@ export default function App() {
         </div>
       )}
       {tab==='analyzer' ? (
-        <main id="main-content" style={{ display:'flex', flex:1, overflow:'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
+        <main id="main-content" style={{ display:'flex', flex:1, overflow: isMobile ? 'auto' : 'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
           <div style={{ width: isMobile ? '100%' : 280, minWidth: isMobile ? 'unset' : 280, background:'var(--surface)', borderRight: isMobile ? 'none' : '1px solid var(--border)', borderBottom: isMobile ? '1px solid var(--border)' : 'none', overflowY: isMobile ? 'visible' : 'auto', padding:16 }}>
             <div style={{ border:'1px solid var(--border)', borderRadius:12, padding:12, marginBottom:14 }}>
               <SectionLabel icon="link">Import from Zillow</SectionLabel>
               <div style={{ display:'flex', gap:6 }}>
-                <main id="main-content" style={{ display:'flex', flex:1, overflow:'hidden' }}>
-               <div style={{ width:280, minWidth:280, background:'var(--surface)', borderRight:'1px solid var(--border)', overflowY:'auto', padding:16 }}>
+                <input type="text" value={zillowUrl} onChange={e => setZillowUrl(e.target.value)} placeholder="Paste a Zillow listing URL…" aria-label="Zillow listing URL" style={{ flex:1, fontSize:12 }} />
+                <button onClick={handleImport} disabled={importing} style={{ padding:'8px 12px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:6, fontSize:13, cursor:importing?'not-allowed':'pointer', fontWeight:500, fontFamily:'var(--font)', whiteSpace:'nowrap', opacity:importing?0.7:1, display:'flex', alignItems:'center', gap:5 }}>
                   {importing ? 'Importing…' : isPro ? 'Import' : <><i className="ti ti-bolt" style={{fontSize:12}}/> Pro</>}
                 </button>
               </div>
