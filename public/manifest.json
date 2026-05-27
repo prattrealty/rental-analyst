@@ -1,6 +1,7 @@
 {
   "name": "Rental Analyst",
   "short_name": "Rental Analyst",
+  "id": "/",
   "description": "Rental property analyzer for real estate investors",
   "start_url": "/",
   "display": "standalone",
@@ -9,6 +10,8 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "categories": ["finance", "business", "utilities"],
   "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
   "screenshots": [
@@ -51,12 +54,6 @@
     }
   ],
   "icons": [
-    {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
     {
       "src": "/icon-192x192.png",
       "sizes": "192x192",
