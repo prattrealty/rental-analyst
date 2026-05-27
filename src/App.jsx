@@ -608,6 +608,12 @@ const DEFAULT_FIELDS = {
 
 export default function App() {
   const [tab, setTab] = useState('analyzer')
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
+  React.useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
   const [showWalkthrough, setShowWalkthrough] = useState(() => !localStorage.getItem('ra_toured'))
   const [fields, setFields] = useState(DEFAULT_FIELDS)
   const [zillowUrl, setZillowUrl] = useState('')
