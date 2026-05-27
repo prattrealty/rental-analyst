@@ -14,10 +14,31 @@
   "screenshots": [
     {
       "src": "/screenshot1.png",
-      "sizes": "1280x720",
+      "sizes": "1568x708",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Rental Analyst Dashboard"
+    },
+    {
+      "src": "/screenshot2.png",
+      "sizes": "349x753",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Deal Score"
+    },
+    {
+      "src": "/screenshot3.png",
+      "sizes": "347x756",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Property Analysis"
+    },
+    {
+      "src": "/screenshot4.png",
+      "sizes": "345x753",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Zillow Import"
     }
   ],
   "shortcuts": [
