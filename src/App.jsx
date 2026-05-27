@@ -810,8 +810,8 @@ export default function App() {
         </div>
       )}
       {tab==='analyzer' ? (
-        <main id="main-content" style={{ display:'flex', flex:1, overflow:'hidden' }}>
-          <div style={{ width:280, minWidth:280, background:'var(--surface)', borderRight:'1px solid var(--border)', overflowY:'auto', padding:16 }}>
+        <main id="main-content" style={{ display:'flex', flex:1, overflow:'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
+          <div style={{ width: isMobile ? '100%' : 280, minWidth: isMobile ? 'unset' : 280, background:'var(--surface)', borderRight: isMobile ? 'none' : '1px solid var(--border)', borderBottom: isMobile ? '1px solid var(--border)' : 'none', overflowY: isMobile ? 'visible' : 'auto', padding:16 }}>
             <div style={{ border:'1px solid var(--border)', borderRadius:12, padding:12, marginBottom:14 }}>
               <SectionLabel icon="link">Import from Zillow</SectionLabel>
               <div style={{ display:'flex', gap:6 }}>
