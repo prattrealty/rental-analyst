@@ -1,5 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
+  <style>
+  @media (max-width: 768px) {
+    /* Stack sidebar and content vertically on mobile */
+    main#main-content {
+      flex-direction: column !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+    }
+    /* Sidebar becomes full width, no fixed width */
+    main#main-content > div:first-child {
+      width: 100% !important;
+      min-width: unset !important;
+      border-right: none !important;
+      border-bottom: 1px solid var(--border) !important;
+      overflow-y: visible !important;
+    }
+    /* Content panel full width */
+    main#main-content > div:last-child {
+      flex: unset !important;
+      width: 100% !important;
+      overflow-y: visible !important;
+      padding: 16px !important;
+    }
+    /* Metric bar scrolls horizontally on mobile — already works */
+    /* Make top metric cards smaller on mobile */
+    .metric-bar > div {
+      min-width: 140px !important;
+      padding: 10px 12px !important;
+    }
+    /* Header nav wrap on very small screens */
+    header .nav-btn span {
+      display: none;
+    }
+  }
+</style>
   <head><!-- Google tag (gtag.js) -->
     <link rel="manifest" href="/manifest.json" />
 <meta name="theme-color" content="#0f2744" />
