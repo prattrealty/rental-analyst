@@ -44,7 +44,8 @@ function calcMetrics(f) {
   const closing = price * (closingPct / 100)
   const totalCashIn = down + closing + (f.renoFinanced ? 0 : reno)
   const loanAmt = price - down + (f.renoFinanced ? reno : 0)
-  const monthlyMortgage = calcMortgage(loanAmt, rate, term)
+  const isCashDeal = downPct >= 100 || loanAmt <= 0
+  const monthlyMortgage = isCashDeal ? 0 : calcMortgage(loanAmt, rate, term)
   const mgmt = effectiveRent * (mgmtPct / 100)
   const totalExpenses = taxesMonthly + insuranceMonthly + mgmt + maintenance + otherExpenses
   const totalIncome = effectiveRent + otherIncome
@@ -55,29 +56,35 @@ function calcMetrics(f) {
   const coc = totalCashIn > 0 ? (annualCF / totalCashIn) * 100 : 0
   const grossYield = price > 0 ? (rent * 12 / price) * 100 : 0
   const breakeven = totalExpenses + monthlyMortgage
-  const dscr = monthlyMortgage > 0 ? noi / monthlyMortgage : 0
+  const dscr = monthlyMortgage > 0 ? noi / monthlyMortgage : null
   const onePercentRule = price > 0 ? (rent / price) * 100 : 0
   const onePercentPass = onePercentRule >= 1
 
-  // DSCR guidance — what rent or price is needed to hit 1.25x
+  // ARV-based DSCR refi analysis
+  const arvRate = rate > 0 ? rate : 7.25
   const targetDscr = 1.25
-  const rentNeededForDscr = monthlyMortgage > 0 ? Math.ceil((monthlyMortgage * targetDscr + totalExpenses - otherIncome) / (1 - vacancyPct / 100)) : 0
-  const priceNeededForDscr = rate > 0 ? (() => {
-    // Binary search for price where DSCR hits 1.25
+  // Max loan where DSCR = 1.25: loan = NOI / 1.25 / monthly_rate_factor
+  const monthlyRateFactor = arvRate / 100 / 12
+  const n = term * 12
+  const mortgageConstant = monthlyRateFactor > 0 ? (monthlyRateFactor * Math.pow(1 + monthlyRateFactor, n)) / (Math.pow(1 + monthlyRateFactor, n) - 1) : 1 / n
+  const maxLoanForDscr = noi > 0 && mortgageConstant > 0 ? Math.floor((noi / targetDscr) / mortgageConstant) : 0
+  const cashOutPotential = maxLoanForDscr - loanAmt
+
+  // For financed deals: what rent or price needed to hit 1.25x
+  const rentNeededForDscr = !isCashDeal && monthlyMortgage > 0 ? Math.ceil((monthlyMortgage * targetDscr + totalExpenses - otherIncome) / (1 - vacancyPct / 100)) : 0
+  const priceNeededForDscr = !isCashDeal && rate > 0 ? (() => {
     let lo = price * 0.5, hi = price
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2
       const loan = mid - mid * (downPct / 100) + (f.renoFinanced ? reno : 0)
       const pmt = calcMortgage(loan, rate, term)
-      const testNoi = totalIncome - (taxesMonthly + insuranceMonthly + mgmt + maintenance + otherExpenses)
-      if (testNoi / pmt > targetDscr) hi = mid
+      if (noi / pmt > targetDscr) hi = mid
       else lo = mid
     }
     return Math.round((lo + hi) / 2)
   })() : 0
 
   const r = rate / 100 / 12
-  const n = term * 12
   let balance = loanAmt
   const chartData = []
   const annualCashFlows = [-totalCashIn]
@@ -125,7 +132,8 @@ function calcMetrics(f) {
     capRate, coc, grossYield, breakeven, dscr, onePercentRule, onePercentPass, irr, equityMultiple,
     insurance: insuranceMonthly, maintenance, taxes: taxesMonthly, chartData,
     rentGrowth: rentGrowth * 100, appreciation: appreciation * 100,
-    rentNeededForDscr, priceNeededForDscr, otherIncome, otherExpenses
+    rentNeededForDscr, priceNeededForDscr, otherIncome, otherExpenses,
+    isCashDeal, maxLoanForDscr, cashOutPotential
   }
 }
 
@@ -134,9 +142,10 @@ function calcDealScore(metrics) {
   let score = 0
   const breakdown = []
 
-  const capPts = metrics.capRate >= 8 ? 30 : metrics.capRate >= 6 ? 22 : metrics.capRate >= 5 ? 15 : metrics.capRate >= 3 ? 8 : 2
+  // Cap rate: 35 pts (DSCR removed, points redistributed here)
+  const capPts = metrics.capRate >= 8 ? 35 : metrics.capRate >= 6 ? 26 : metrics.capRate >= 5 ? 18 : metrics.capRate >= 3 ? 9 : 2
   score += capPts
-  breakdown.push({ label: 'Cap rate', score: capPts, max: 30, value: metrics.capRate.toFixed(2) + '%' })
+  breakdown.push({ label: 'Cap rate', score: capPts, max: 35, value: metrics.capRate.toFixed(2) + '%' })
 
   const cocPts = metrics.coc >= 8 ? 25 : metrics.coc >= 5 ? 18 : metrics.coc >= 2 ? 10 : metrics.coc >= 0 ? 4 : 0
   score += cocPts
@@ -146,18 +155,15 @@ function calcDealScore(metrics) {
   score += gyPts
   breakdown.push({ label: 'Gross yield', score: gyPts, max: 20, value: metrics.grossYield.toFixed(2) + '%' })
 
-  const cfPts = metrics.cashflow >= 300 ? 15 : metrics.cashflow >= 100 ? 10 : metrics.cashflow >= 0 ? 5 : 0
+  // Cash flow: 18 pts (redistributed from DSCR)
+  const cfPts = metrics.cashflow >= 300 ? 18 : metrics.cashflow >= 100 ? 12 : metrics.cashflow >= 0 ? 6 : 0
   score += cfPts
-  breakdown.push({ label: 'Monthly cash flow', score: cfPts, max: 15, value: '$' + Math.round(metrics.cashflow) + '/mo' })
+  breakdown.push({ label: 'Monthly cash flow', score: cfPts, max: 18, value: '$' + Math.round(metrics.cashflow) + '/mo' })
 
   const beRatio = metrics.breakeven > 0 ? metrics.cashflow / metrics.breakeven : 0
   const bePts = beRatio >= 0.15 ? 7 : beRatio >= 0.05 ? 5 : beRatio >= 0 ? 2 : 0
   score += bePts
   breakdown.push({ label: 'Break-even buffer', score: bePts, max: 7, value: (beRatio * 100).toFixed(1) + '% above break-even' })
-
-  const dscrPts = metrics.dscr >= 1.25 ? 8 : metrics.dscr >= 1.0 ? 5 : metrics.dscr >= 0.8 ? 2 : 0
-  score += dscrPts
-  breakdown.push({ label: 'DSCR', score: dscrPts, max: 8, value: metrics.dscr.toFixed(2) + 'x' })
 
   const grade = score >= 75
     ? { label: 'Strong Deal', color: '#1a7a4a', bg: '#eaf3de', emoji: '🟢' }
@@ -197,6 +203,7 @@ function DealScoreCard({ metrics }) {
               : score >= 50 ? 'Decent deal with room to negotiate or optimize.'
               : 'Proceed with caution — numbers are tight for this market.'}
           </div>
+          <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>Based on property fundamentals — financing-independent</div>
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -223,10 +230,7 @@ function RentSlider({ rent, onChange }) {
   const [val, setVal] = React.useState(base)
   const prevBase = React.useRef(base)
   React.useEffect(() => {
-    if (prevBase.current !== base) {
-      prevBase.current = base
-      setVal(base)
-    }
+    if (prevBase.current !== base) { prevBase.current = base; setVal(base) }
   }, [base])
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px 20px', marginBottom: 18 }}>
@@ -281,7 +285,7 @@ function WalkthroughBubble({ onDone }) {
   const steps = [
     { icon: 'ti-link', title: 'Paste a Zillow URL', body: "Analyze any property by entering the address — or import from Zillow with Pro.", highlight: 'top-left' },
     { icon: 'ti-calculator', title: 'Enter the purchase price', body: "RentCast does not have live listing prices yet - just type in the price from Zillow. Everything else calculates instantly.", highlight: 'top-left' },
-    { icon: 'ti-chart-bar', title: 'Read your Deal Score', body: "Your Deal Score (0-100) grades the investment on cap rate, cash flow, CoC return, and more. Drag the rent slider to stress-test the numbers.", highlight: 'right' },
+    { icon: 'ti-chart-bar', title: 'Read your Deal Score', body: "Your Deal Score (0-100) grades the investment on property fundamentals — cap rate, cash flow, gross yield, and more. Financing-independent, so cash deals score fairly too.", highlight: 'right' },
   ]
   const s = steps[step]
   const isLast = step === steps.length - 1
@@ -365,9 +369,9 @@ function UpgradeModal({ onClose, trigger, onUpgrade }) {
   ]
   const handleStripeCheckout = async () => {
     try {
-      const res = await fetch('/api/stripe-checkout', { method: 'POST' });
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      const res = await fetch('/api/stripe-checkout', { method: 'POST' })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
     } catch (err) { alert('Something went wrong. Please try again.') }
   }
   return (
@@ -580,7 +584,7 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false)
   const [showWalkthrough, setShowWalkthrough] = useState(() => !localStorage.getItem('ra_toured'))
   const [fields, setFields] = useState(DEFAULT_FIELDS)
-  const [maintenanceMode, setMaintenanceMode] = useState('$') // '$' or '%'
+  const [maintenanceMode, setMaintenanceMode] = useState('$')
   const [zillowUrl, setZillowUrl] = useState('')
   const [importing, setImporting] = useState(false)
   const [toast, setToast] = useState(null)
@@ -647,8 +651,7 @@ export default function App() {
       const match = url.match(/homedetails\/([^/]+)\//)
       if (!match) return null
       const slug = match[1]
-      const cleaned = slug.replace(/-\d{5}(\d*)$/, m => m.replace(/-/, ' ')).replace(/-/g, ' ').replace(/\b(\w)/g, c => c.toUpperCase()).replace(/\s+/g, ' ').trim()
-      return cleaned
+      return slug.replace(/-\d{5}(\d*)$/, m => m.replace(/-/, ' ')).replace(/-/g, ' ').replace(/\b(\w)/g, c => c.toUpperCase()).replace(/\s+/g, ' ').trim()
     } catch { return null }
   }
 
@@ -685,8 +688,7 @@ export default function App() {
         setImportAddress(address); setShowAddressFallback(true)
         showToast('Could not match that address. Edit it below and retry.', 'error')
       } else {
-        const imported = [importedFields.address && 'Address', importedFields.rent && 'Rent estimate', importedFields.price && 'Price', importedFields.taxes && 'Taxes'].filter(Boolean)
-        showToast('Imported: ' + imported.join(', '))
+        showToast('Imported: ' + [importedFields.address && 'Address', importedFields.rent && 'Rent estimate', importedFields.price && 'Price', importedFields.taxes && 'Taxes'].filter(Boolean).join(', '))
       }
     } catch (err) {
       setImportAddress(address); setShowAddressFallback(true)
@@ -699,24 +701,12 @@ export default function App() {
     if (!url) { showToast('Paste a Zillow listing URL first.', 'error'); return }
     if (!isPro) { openUpgrade('import'); return }
     const address = extractAddressFromZillow(url)
-    if (!address) { showToast('Could not read address from that URL. Try a full Zillow listing URL (e.g. zillow.com/homedetails/…)', 'error'); return }
+    if (!address) { showToast('Could not read address from that URL.', 'error'); return }
     setImportAddress(address)
     await runImport(address)
   }
 
   const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
-
-  // DSCR contextual message
-  const dscrMessage = () => {
-    if (metrics.monthlyMortgage <= 0) return null
-    if (metrics.dscr >= 1.25) return { text: `Your DSCR of ${metrics.dscr.toFixed(2)}x meets most lenders' minimum of 1.25x. This property qualifies for a DSCR loan as-is.`, color: 'var(--green)', bg: '#eaf3de' }
-    if (metrics.dscr >= 1.0) {
-      const rentGap = metrics.rentNeededForDscr - fields.rent
-      return { text: `Your DSCR of ${metrics.dscr.toFixed(2)}x is below the 1.25x most lenders require. To qualify: increase rent by ${fmt(rentGap)}/mo (to ${fmt(metrics.rentNeededForDscr)}/mo) or negotiate the price down to ${fmt(metrics.priceNeededForDscr)}.`, color: 'var(--amber)', bg: '#faeeda' }
-    }
-    const rentGap = metrics.rentNeededForDscr - fields.rent
-    return { text: `Your DSCR of ${metrics.dscr.toFixed(2)}x is below the lender threshold. This property likely won't qualify for a DSCR loan at current numbers. You'd need rent of ${fmt(metrics.rentNeededForDscr)}/mo (+${fmt(rentGap)}) or a purchase price around ${fmt(metrics.priceNeededForDscr)}.`, color: 'var(--red)', bg: '#fcebeb' }
-  }
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
@@ -820,10 +810,13 @@ export default function App() {
               <Field label="Down payment" id="downPct" value={fields.downPct} onChange={set('downPct')} suffix="%" />
               <Field label="Closing costs" id="closingPct" value={fields.closingPct} onChange={set('closingPct')} suffix="%" />
             </FieldRow>
+            {fields.downPct >= 100 && (
+              <div style={{ background:'#eaf3de', border:'1px solid #b7d9a0', borderRadius:6, padding:'6px 10px', fontSize:11, color:'#3b6d11', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
+                <i className="ti ti-cash" style={{ fontSize:13 }} /> Cash purchase — no mortgage
+              </div>
+            )}
             <Field label="Renovation budget" id="reno" value={fields.reno} onChange={set('reno')} prefix="$" />
-            <div style={{ fontSize:11, color:'var(--text3)', marginTop:-8, marginBottom:6, lineHeight:1.4 }}>
-              How is the renovation funded?
-            </div>
+            <div style={{ fontSize:11, color:'var(--text3)', marginTop:-8, marginBottom:6, lineHeight:1.4 }}>How is the renovation funded?</div>
             <div style={{ display:'flex', gap:6, marginBottom:12 }}>
               {['Cash','Financed'].map(opt => (
                 <button key={opt} onClick={() => setFields(f => ({...f, renoFinanced: opt==='Financed'}))}
@@ -867,14 +860,8 @@ export default function App() {
                 </div>
               </div>
               {maintenanceMode === '$'
-                ? <div style={{ position:'relative' }}>
-                    <span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>$</span>
-                    <input type="number" value={fields.maintenance} onChange={e => set('maintenance')(e.target.value)} onFocus={e => e.target.select()} style={{ paddingLeft:18 }} />
-                  </div>
-                : <div style={{ position:'relative' }}>
-                    <input type="number" value={fields.maintenancePct} onChange={e => set('maintenancePct')(e.target.value)} onFocus={e => e.target.select()} style={{ paddingRight:28 }} />
-                    <span style={{ position:'absolute', right:9, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--text3)', pointerEvents:'none' }}>% rent</span>
-                  </div>
+                ? <div style={{ position:'relative' }}><span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>$</span><input type="number" value={fields.maintenance} onChange={e => set('maintenance')(e.target.value)} onFocus={e => e.target.select()} style={{ paddingLeft:18 }} /></div>
+                : <div style={{ position:'relative' }}><input type="number" value={fields.maintenancePct} onChange={e => set('maintenancePct')(e.target.value)} onFocus={e => e.target.select()} style={{ paddingRight:28 }} /><span style={{ position:'absolute', right:9, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--text3)', pointerEvents:'none' }}>% rent</span></div>
               }
               <div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>
                 {maintenanceMode === '%' ? `= ${fmt(metrics.maintenance)}/mo (${fields.maintenancePct}% of effective rent)` : 'Industry avg: 8-10% of gross rent'}
@@ -897,7 +884,10 @@ export default function App() {
           </div>
           <div style={{ flex:1, overflowY:'auto', padding:24 }}>
             <div style={{ background:'var(--navy)', color:'#fff', borderRadius:12, padding:'18px 22px', marginBottom:18 }}>
-              <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', letterSpacing:'1px', textTransform:'uppercase', marginBottom:4 }}>Investment calculator</div>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4 }}>
+                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', letterSpacing:'1px', textTransform:'uppercase' }}>Investment calculator</div>
+                {metrics.isCashDeal && <span style={{ background:'rgba(77,168,255,0.25)', color:'#4da8ff', fontSize:10, fontWeight:600, padding:'2px 8px', borderRadius:10, letterSpacing:'0.5px' }}>💵 CASH DEAL</span>}
+              </div>
               <div style={{ fontSize:20, fontWeight:600, marginBottom:2 }}>{fields.address||'Rental Property Analyzer'}</div>
               <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)' }}>{fields.neighborhood&&fields.zip?`${fields.neighborhood}, ${fields.zip}`:'Enter property details to analyze'}</div>
               {fields.rentRangeLow > 0 && (
@@ -917,8 +907,8 @@ export default function App() {
               {[
                 { label:'Monthly NOI', value:fmt(metrics.noi), pos:metrics.noi>=0 },
                 { label:'Annual cash flow', value:fmt(metrics.annualCF), pos:metrics.annualCF>=0 },
-                { label:'Monthly mortgage', value:fmt(metrics.monthlyMortgage)+'/mo' },
-                { label:'Loan amount', value:fmtK(metrics.loanAmt) },
+                { label: metrics.isCashDeal ? 'No mortgage' : 'Monthly mortgage', value: metrics.isCashDeal ? 'Cash purchase' : fmt(metrics.monthlyMortgage)+'/mo' },
+                { label:'Loan amount', value: metrics.isCashDeal ? 'N/A' : fmtK(metrics.loanAmt) },
               ].map(m => (
                 <div key={m.label} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
                   <div style={{ fontSize:11, color:'var(--text2)', marginBottom:4 }}>{m.label}</div>
@@ -933,12 +923,19 @@ export default function App() {
                 </div>
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))', gap:10 }}>
                   {[
-                    {
+                    !metrics.isCashDeal && {
                       label:'DSCR',
-                      value: metrics.dscr.toFixed(2) + 'x',
+                      value: metrics.dscr !== null ? metrics.dscr.toFixed(2) + 'x' : 'N/A',
                       sub: metrics.dscr >= 1.25 ? 'Lender approved' : metrics.dscr >= 1.0 ? 'Borderline' : 'Below threshold',
                       color: metrics.dscr >= 1.25 ? 'var(--green)' : metrics.dscr >= 1.0 ? 'var(--amber)' : 'var(--red)',
-                      tip: 'Debt Service Coverage Ratio — lenders want 1.25x+'
+                      tip: 'Debt Service Coverage Ratio — lenders want 1.25x+. Not included in Deal Score.'
+                    },
+                    metrics.isCashDeal && {
+                      label:'Refi potential',
+                      value: metrics.maxLoanForDscr > 0 ? fmtK(metrics.maxLoanForDscr) : 'N/A',
+                      sub: metrics.cashOutPotential > 0 ? `~${fmtK(metrics.cashOutPotential)} cash-out` : 'At current NOI',
+                      color: metrics.maxLoanForDscr > 0 ? 'var(--green)' : 'var(--text2)',
+                      tip: 'Max loan amount where DSCR stays at 1.25x — useful for BRRRR or cash-out refi planning.'
                     },
                     {
                       label:'1% Rule',
@@ -961,7 +958,7 @@ export default function App() {
                       color: metrics.equityMultiple >= 2 ? 'var(--green)' : metrics.equityMultiple >= 1.5 ? 'var(--amber)' : 'var(--red)',
                       tip: 'Total return / cash invested over 10 years'
                     },
-                  ].map(m => (
+                  ].filter(Boolean).map(m => (
                     <div key={m.label} title={m.tip} style={{ background:'var(--surface2)', borderRadius:8, padding:'12px 14px', cursor:'help' }}>
                       <div style={{ fontSize:11, color:'var(--text2)', marginBottom:2 }}>{m.label} <i className="ti ti-info-circle" style={{ fontSize:10, color:'var(--text3)' }} /></div>
                       <div style={{ fontSize:18, fontWeight:700, color:m.color }}>{m.value}</div>
@@ -969,11 +966,23 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-                {(() => { const d = dscrMessage(); return d ? (
-                  <div style={{ marginTop:14, padding:'10px 14px', background:d.bg, borderRadius:8, fontSize:12, color:d.color, lineHeight:1.5 }}>
-                    <strong>DSCR insight:</strong> {d.text}
+                {/* DSCR contextual insight for financed deals */}
+                {!metrics.isCashDeal && metrics.dscr !== null && (() => {
+                  const color = metrics.dscr >= 1.25 ? 'var(--green)' : metrics.dscr >= 1.0 ? 'var(--amber)' : 'var(--red)'
+                  const bg = metrics.dscr >= 1.25 ? '#eaf3de' : metrics.dscr >= 1.0 ? '#faeeda' : '#fcebeb'
+                  const text = metrics.dscr >= 1.25
+                    ? `Your DSCR of ${metrics.dscr.toFixed(2)}x meets most lenders' minimum of 1.25x. This property qualifies for a DSCR loan as-is.`
+                    : metrics.dscr >= 1.0
+                    ? `Your DSCR of ${metrics.dscr.toFixed(2)}x is below the 1.25x most lenders require. To qualify: increase rent to ${fmt(metrics.rentNeededForDscr)}/mo or negotiate the price to ${fmt(metrics.priceNeededForDscr)}.`
+                    : `Your DSCR of ${metrics.dscr.toFixed(2)}x is below lender threshold. You'd need rent of ${fmt(metrics.rentNeededForDscr)}/mo or a purchase price around ${fmt(metrics.priceNeededForDscr)} to qualify for a DSCR loan.`
+                  return <div style={{ marginTop:14, padding:'10px 14px', background:bg, borderRadius:8, fontSize:12, color, lineHeight:1.5 }}><strong>DSCR insight:</strong> {text}</div>
+                })()}
+                {/* Cash deal refi insight */}
+                {metrics.isCashDeal && metrics.maxLoanForDscr > 0 && (
+                  <div style={{ marginTop:14, padding:'10px 14px', background:'#eaf3de', borderRadius:8, fontSize:12, color:'#1a7a4a', lineHeight:1.5 }}>
+                    <strong>Refi insight:</strong> Based on current NOI, you could refinance up to {fmtK(metrics.maxLoanForDscr)} and still maintain a 1.25x DSCR.{metrics.cashOutPotential > 0 ? ` That's approximately ${fmtK(metrics.cashOutPotential)} in potential cash-out above your current loan balance.` : ''}
                   </div>
-                ) : null })()}
+                )}
                 <div style={{ marginTop:14, paddingTop:12, borderTop:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
                   <div style={{ fontSize:11, color:'var(--text2)', fontWeight:500 }}>Est. expenses:</div>
                   <span style={{ fontSize:11, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:4, padding:'2px 8px' }}>Insurance: {fmt(metrics.insurance)}/mo</span>
