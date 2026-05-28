@@ -25,25 +25,30 @@ function calcMetrics(f) {
   const reno = f.reno || 0
   const rent = f.rent || 0
   const vacancyPct = f.vacancyPct || 0
-  const taxes = f.taxes || 0
+  const taxesMonthly = f.taxesYearly > 0 ? Math.round(f.taxesYearly / 12) : (f.taxes || 0)
+  const insuranceMonthly = f.insuranceYearly > 0 ? Math.round(f.insuranceYearly / 12) : (f.insurance > 0 ? f.insurance : (price > 0 ? Math.round(price * 0.008 / 12) : 0))
   const mgmtPct = f.mgmtPct || 0
   const rate = f.rate || 0
   const term = f.term || 30
   const rentGrowth = (f.rentGrowth !== undefined ? f.rentGrowth : 2.5) / 100
   const appreciation = (f.appreciation !== undefined ? f.appreciation : 3.0) / 100
+  const otherIncome = f.otherIncome || 0
+  const otherExpenses = f.otherExpenses || 0
 
-  const insurance = f.insurance > 0 ? f.insurance : (price > 0 ? Math.round(price * 0.008 / 12) : 0)
-  const maintenance = f.maintenance > 0 ? f.maintenance : (price > 0 ? Math.round(price * 0.01 / 12) : 0)
+  const effectiveRent = rent * (1 - vacancyPct / 100)
+  const maintenance = f.maintenancePct > 0
+    ? Math.round(effectiveRent * (f.maintenancePct / 100))
+    : (f.maintenance > 0 ? f.maintenance : (price > 0 ? Math.round(price * 0.01 / 12) : 0))
 
   const down = price * (downPct / 100)
   const closing = price * (closingPct / 100)
   const totalCashIn = down + closing + (f.renoFinanced ? 0 : reno)
   const loanAmt = price - down + (f.renoFinanced ? reno : 0)
   const monthlyMortgage = calcMortgage(loanAmt, rate, term)
-  const effectiveRent = rent * (1 - vacancyPct / 100)
   const mgmt = effectiveRent * (mgmtPct / 100)
-  const totalExpenses = taxes + insurance + mgmt + maintenance
-  const noi = effectiveRent - totalExpenses
+  const totalExpenses = taxesMonthly + insuranceMonthly + mgmt + maintenance + otherExpenses
+  const totalIncome = effectiveRent + otherIncome
+  const noi = totalIncome - totalExpenses
   const cashflow = noi - monthlyMortgage
   const annualCF = cashflow * 12
   const capRate = price > 0 ? (noi * 12 / price) * 100 : 0
@@ -53,6 +58,23 @@ function calcMetrics(f) {
   const dscr = monthlyMortgage > 0 ? noi / monthlyMortgage : 0
   const onePercentRule = price > 0 ? (rent / price) * 100 : 0
   const onePercentPass = onePercentRule >= 1
+
+  // DSCR guidance — what rent or price is needed to hit 1.25x
+  const targetDscr = 1.25
+  const rentNeededForDscr = monthlyMortgage > 0 ? Math.ceil((monthlyMortgage * targetDscr + totalExpenses - otherIncome) / (1 - vacancyPct / 100)) : 0
+  const priceNeededForDscr = rate > 0 ? (() => {
+    // Binary search for price where DSCR hits 1.25
+    let lo = price * 0.5, hi = price
+    for (let i = 0; i < 50; i++) {
+      const mid = (lo + hi) / 2
+      const loan = mid - mid * (downPct / 100) + (f.renoFinanced ? reno : 0)
+      const pmt = calcMortgage(loan, rate, term)
+      const testNoi = totalIncome - (taxesMonthly + insuranceMonthly + mgmt + maintenance + otherExpenses)
+      if (testNoi / pmt > targetDscr) hi = mid
+      else lo = mid
+    }
+    return Math.round((lo + hi) / 2)
+  })() : 0
 
   const r = rate / 100 / 12
   const n = term * 12
@@ -98,7 +120,13 @@ function calcMetrics(f) {
   const totalReturn = annualCashFlows.slice(1).reduce((s, v) => s + v, 0)
   const equityMultiple = totalCashIn > 0 ? (totalReturn + totalCashIn) / totalCashIn : 0
 
-  return { price, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF, capRate, coc, grossYield, breakeven, dscr, onePercentRule, onePercentPass, irr, equityMultiple, insurance, maintenance, chartData, rentGrowth: rentGrowth * 100, appreciation: appreciation * 100 }
+  return {
+    price, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF,
+    capRate, coc, grossYield, breakeven, dscr, onePercentRule, onePercentPass, irr, equityMultiple,
+    insurance: insuranceMonthly, maintenance, taxes: taxesMonthly, chartData,
+    rentGrowth: rentGrowth * 100, appreciation: appreciation * 100,
+    rentNeededForDscr, priceNeededForDscr, otherIncome, otherExpenses
+  }
 }
 
 function calcDealScore(metrics) {
@@ -251,46 +279,18 @@ function CompsCard({ comps, loading }) {
 function WalkthroughBubble({ onDone }) {
   const [step, setStep] = React.useState(0)
   const steps = [
-    {
-      icon: 'ti-link',
-      title: 'Paste a Zillow URL',
-      body: "Analyze any property by entering the address — or import from Zillow with Pro.",
-      highlight: 'top-left',
-    },
-    {
-      icon: 'ti-calculator',
-      title: 'Enter the purchase price',
-      body: "RentCast does not have live listing prices yet - just type in the price from Zillow. Everything else calculates instantly.",
-      highlight: 'top-left',
-    },
-    {
-      icon: 'ti-chart-bar',
-      title: 'Read your Deal Score',
-      body: "Your Deal Score (0-100) grades the investment on cap rate, cash flow, CoC return, and more. Drag the rent slider to stress-test the numbers.",
-      highlight: 'right',
-    },
+    { icon: 'ti-link', title: 'Paste a Zillow URL', body: "Analyze any property by entering the address — or import from Zillow with Pro.", highlight: 'top-left' },
+    { icon: 'ti-calculator', title: 'Enter the purchase price', body: "RentCast does not have live listing prices yet - just type in the price from Zillow. Everything else calculates instantly.", highlight: 'top-left' },
+    { icon: 'ti-chart-bar', title: 'Read your Deal Score', body: "Your Deal Score (0-100) grades the investment on cap rate, cash flow, CoC return, and more. Drag the rent slider to stress-test the numbers.", highlight: 'right' },
   ]
   const s = steps[step]
   const isLast = step === steps.length - 1
-
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 2000, pointerEvents: 'none' }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', pointerEvents: 'auto' }} onClick={onDone} />
-      <div style={{
-        position: 'absolute',
-        top: '50%', left: '50%',
-        transform: 'translate(-50%, -50%)',
-        background: 'var(--surface)',
-        borderRadius: 16,
-        width: 360,
-        boxShadow: '0 24px 60px rgba(0,0,0,0.35)',
-        overflow: 'hidden',
-        pointerEvents: 'auto',
-      }}>
+      <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: 'var(--surface)', borderRadius: 16, width: 360, boxShadow: '0 24px 60px rgba(0,0,0,0.35)', overflow: 'hidden', pointerEvents: 'auto' }}>
         <div style={{ background: 'var(--navy)', padding: '24px 24px 20px', color: '#fff', position: 'relative' }}>
-          <button onClick={onDone} style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', width: 28, height: 28, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font)' }}>
-            <i className="ti ti-x" />
-          </button>
+          <button onClick={onDone} style={{ position: 'absolute', top: 14, right: 14, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', width: 28, height: 28, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font)' }}><i className="ti ti-x" /></button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(77,168,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <i className={`ti ${s.icon}`} style={{ fontSize: 22, color: '#4da8ff' }} />
@@ -301,22 +301,14 @@ function WalkthroughBubble({ onDone }) {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
-            {steps.map((_, i) => (
-              <div key={i} style={{ height: 3, flex: 1, borderRadius: 2, background: i <= step ? '#4da8ff' : 'rgba(255,255,255,0.2)', transition: 'background 0.3s' }} />
-            ))}
+            {steps.map((_, i) => (<div key={i} style={{ height: 3, flex: 1, borderRadius: 2, background: i <= step ? '#4da8ff' : 'rgba(255,255,255,0.2)', transition: 'background 0.3s' }} />))}
           </div>
         </div>
         <div style={{ padding: '20px 24px 24px' }}>
           <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, margin: '0 0 20px' }}>{s.body}</p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            {step > 0 && (
-              <button onClick={() => setStep(s => s - 1)} style={{ padding: '9px 16px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, cursor: 'pointer', color: 'var(--text2)', fontFamily: 'var(--font)' }}>
-                Back
-              </button>
-            )}
-            <button onClick={() => isLast ? onDone() : setStep(s => s + 1)} style={{ padding: '9px 20px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>
-              {isLast ? "Let's go! 🚀" : 'Next →'}
-            </button>
+            {step > 0 && (<button onClick={() => setStep(s => s - 1)} style={{ padding: '9px 16px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 13, cursor: 'pointer', color: 'var(--text2)', fontFamily: 'var(--font)' }}>Back</button>)}
+            <button onClick={() => isLast ? onDone() : setStep(s => s + 1)} style={{ padding: '9px 20px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>{isLast ? "Let's go! 🚀" : 'Next →'}</button>
           </div>
         </div>
       </div>
@@ -352,9 +344,7 @@ function SignupModal({ onClose, form, setForm, onSubmit, error }) {
             <label htmlFor="agreed" style={{ fontSize:12, color:'var(--text2)', lineHeight:1.4 }}>I agree to receive occasional updates from Rental Analyst. No spam, no selling your data.</label>
           </div>
           {error && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{error}</div>}
-          <button onClick={onSubmit} style={{ width:'100%', padding:'13px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)' }}>
-            Create Free Account
-          </button>
+          <button onClick={onSubmit} style={{ width:'100%', padding:'13px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)' }}>Create Free Account</button>
           <div style={{ textAlign:'center', fontSize:11, color:'var(--text3)', marginTop:10 }}>
             We respect your privacy · No credit card required · <a href='/privacy.html' target='_blank' style={{ color:'#1a5fa8', textDecoration:'none' }}>Privacy Policy</a>
           </div>
@@ -378,10 +368,8 @@ function UpgradeModal({ onClose, trigger, onUpgrade }) {
       const res = await fetch('/api/stripe-checkout', { method: 'POST' });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
-    } catch (err) {
-      alert('Something went wrong. Please try again.');
-    }
-  };
+    } catch (err) { alert('Something went wrong. Please try again.') }
+  }
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 520, overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.3)' }}>
@@ -471,16 +459,7 @@ function Field({ label, id, value, onChange, prefix, suffix, type='number' }) {
       <label htmlFor={inputId} style={{ display:'block', fontSize:12, fontWeight:500, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>{label}</label>
       <div style={{ position:'relative' }}>
         {prefix && <span aria-hidden="true" style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>{prefix}</span>}
-        <input
-          type={type}
-          id={inputId}
-          name={inputId}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          onFocus={e => e.target.select()}
-          aria-label={label}
-          style={{ paddingLeft:prefix?18:10, paddingRight:suffix?28:10 }}
-        />
+        <input type={type} id={inputId} name={inputId} value={value} onChange={e => onChange(e.target.value)} onFocus={e => e.target.select()} aria-label={label} style={{ paddingLeft:prefix?18:10, paddingRight:suffix?28:10 }} />
         {suffix && <span aria-hidden="true" style={{ position:'absolute', right:9, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--text3)', pointerEvents:'none' }}>{suffix}</span>}
       </div>
     </div>
@@ -553,7 +532,7 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade }) {
                 <div style={{ fontWeight:600, fontSize:15 }}>{p.fields.address||'Unnamed property'}</div>
                 <div style={{ fontSize:12, color:'var(--text2)' }}>{fmt(p.fields.price)} · {p.fields.neighborhood}</div>
               </div>
-             <button onClick={() => onDelete(p.id)} aria-label="Delete saved property" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', fontSize:16 }}><i className="ti ti-trash" /></button>
+              <button onClick={() => onDelete(p.id)} aria-label="Delete saved property" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', fontSize:16 }}><i className="ti ti-trash" /></button>
             </div>
             <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
               {[
@@ -588,7 +567,10 @@ const DEFAULT_FIELDS = {
   address:'', zip:'', neighborhood:'',
   price:0, downPct:25, closingPct:3, reno:0, renoFinanced:false,
   rent:0, vacancyPct:5, rentRangeLow:0, rentRangeHigh:0,
-  taxes:0, insurance:0, mgmtPct:10, maintenance:0,
+  taxes:0, taxesYearly:0,
+  insurance:0, insuranceYearly:0,
+  mgmtPct:10, maintenance:0, maintenancePct:0,
+  otherIncome:0, otherExpenses:0,
   rate:7.25, term:30,
   rentGrowth:2.5, appreciation:3.0,
 }
@@ -598,6 +580,7 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false)
   const [showWalkthrough, setShowWalkthrough] = useState(() => !localStorage.getItem('ra_toured'))
   const [fields, setFields] = useState(DEFAULT_FIELDS)
+  const [maintenanceMode, setMaintenanceMode] = useState('$') // '$' or '%'
   const [zillowUrl, setZillowUrl] = useState('')
   const [importing, setImporting] = useState(false)
   const [toast, setToast] = useState(null)
@@ -623,7 +606,7 @@ export default function App() {
 
   const set = (key) => (val) => setFields(f => ({ ...f, [key]: ['address','zip','neighborhood'].includes(key) ? val : (parseFloat(val) || 0) }))
   const activeRent = (sliderRent > 0 && sliderRent !== fields.rent) ? sliderRent : fields.rent
-  const metrics = calcMetrics({ ...fields, rent: activeRent })
+  const metrics = calcMetrics({ ...fields, rent: activeRent, maintenancePct: maintenanceMode === '%' ? fields.maintenancePct : 0 })
 
   const showToast = (msg, type='success') => {
     clearTimeout(toastTimer.current)
@@ -664,15 +647,9 @@ export default function App() {
       const match = url.match(/homedetails\/([^/]+)\//)
       if (!match) return null
       const slug = match[1]
-      const cleaned = slug
-        .replace(/-\d{5}(\d*)$/, m => m.replace(/-/, ' '))
-        .replace(/-/g, ' ')
-        .replace(/\b(\w)/g, c => c.toUpperCase())
-        .replace(/\s+/g, ' ').trim()
+      const cleaned = slug.replace(/-\d{5}(\d*)$/, m => m.replace(/-/, ' ')).replace(/-/g, ' ').replace(/\b(\w)/g, c => c.toUpperCase()).replace(/\s+/g, ' ').trim()
       return cleaned
-    } catch {
-      return null
-    }
+    } catch { return null }
   }
 
   const runImport = async (address) => {
@@ -689,7 +666,6 @@ export default function App() {
       const propData = await propRes.json()
       const rentData = await rentRes.json()
       const prop = Array.isArray(propData) ? (propData[0] || {}) : (propData || {})
-
       const importedFields = {}
       importedFields.address = prop.formattedAddress || address
       if (prop.zipCode) importedFields.zip = String(prop.zipCode)
@@ -699,30 +675,23 @@ export default function App() {
       if (rentData.rent) importedFields.rent = parseFloat(rentData.rent) || 0
       if (rentData.rentRangeLow) importedFields.rentRangeLow = parseFloat(rentData.rentRangeLow) || 0
       if (rentData.rentRangeHigh) importedFields.rentRangeHigh = parseFloat(rentData.rentRangeHigh) || 0
-      if (prop.propertyTaxes) importedFields.taxes = Math.round((parseFloat(prop.propertyTaxes) || 0) / 12)
+      if (prop.propertyTaxes) {
+        importedFields.taxesYearly = Math.round(parseFloat(prop.propertyTaxes) || 0)
+        importedFields.taxes = Math.round((parseFloat(prop.propertyTaxes) || 0) / 12)
+      }
       setFields(f => ({ ...f, ...importedFields }))
-
       const gotData = importedFields.rent || importedFields.price || importedFields.taxes
       if (!gotData && !prop.formattedAddress) {
-        setImportAddress(address)
-        setShowAddressFallback(true)
+        setImportAddress(address); setShowAddressFallback(true)
         showToast('Could not match that address. Edit it below and retry.', 'error')
       } else {
-        const imported = [
-          importedFields.address && 'Address',
-          importedFields.rent && 'Rent estimate',
-          importedFields.price && 'Price',
-          importedFields.taxes && 'Taxes',
-        ].filter(Boolean)
+        const imported = [importedFields.address && 'Address', importedFields.rent && 'Rent estimate', importedFields.price && 'Price', importedFields.taxes && 'Taxes'].filter(Boolean)
         showToast('Imported: ' + imported.join(', '))
       }
     } catch (err) {
-      setImportAddress(address)
-      setShowAddressFallback(true)
+      setImportAddress(address); setShowAddressFallback(true)
       showToast('API error — edit the address below and retry.', 'error')
-    } finally {
-      setImporting(false)
-    }
+    } finally { setImporting(false) }
   }
 
   const handleImport = async () => {
@@ -737,6 +706,18 @@ export default function App() {
 
   const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
 
+  // DSCR contextual message
+  const dscrMessage = () => {
+    if (metrics.monthlyMortgage <= 0) return null
+    if (metrics.dscr >= 1.25) return { text: `Your DSCR of ${metrics.dscr.toFixed(2)}x meets most lenders' minimum of 1.25x. This property qualifies for a DSCR loan as-is.`, color: 'var(--green)', bg: '#eaf3de' }
+    if (metrics.dscr >= 1.0) {
+      const rentGap = metrics.rentNeededForDscr - fields.rent
+      return { text: `Your DSCR of ${metrics.dscr.toFixed(2)}x is below the 1.25x most lenders require. To qualify: increase rent by ${fmt(rentGap)}/mo (to ${fmt(metrics.rentNeededForDscr)}/mo) or negotiate the price down to ${fmt(metrics.priceNeededForDscr)}.`, color: 'var(--amber)', bg: '#faeeda' }
+    }
+    const rentGap = metrics.rentNeededForDscr - fields.rent
+    return { text: `Your DSCR of ${metrics.dscr.toFixed(2)}x is below the lender threshold. This property likely won't qualify for a DSCR loan at current numbers. You'd need rent of ${fmt(metrics.rentNeededForDscr)}/mo (+${fmt(rentGap)}) or a purchase price around ${fmt(metrics.priceNeededForDscr)}.`, color: 'var(--red)', bg: '#fcebeb' }
+  }
+
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
       <a href="#main-content" className="skip-nav">Skip to main content</a>
@@ -750,15 +731,9 @@ export default function App() {
         const newUser = { firstName: signupForm.firstName, email: signupForm.email, joinedAt: new Date().toISOString() }
         setUser(newUser)
         localStorage.setItem('ra_user', JSON.stringify(newUser))
-        setShowSignup(false)
-        setSignupError('')
+        setShowSignup(false); setSignupError('')
         showToast(`Welcome, ${signupForm.firstName}! Now save your first property.`)
-        fetch('https://script.google.com/macros/s/AKfycbwb4OwFfCC7NsQrpdmtUfdM6S-AsRkXVpqutyGYt6WfJvTx5exHyNmXXFdeBaQqXfZ8JA/exec', {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newUser)
-        })
+        fetch('https://script.google.com/macros/s/AKfycbwb4OwFfCC7NsQrpdmtUfdM6S-AsRkXVpqutyGYt6WfJvTx5exHyNmXXFdeBaQqXfZ8JA/exec', { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) })
       }} />}
       <header style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }} role="banner">
         <div style={{ display:'flex', alignItems:'center', gap:8, fontWeight:600, fontSize:15, letterSpacing:'-0.3px' }}>
@@ -846,7 +821,10 @@ export default function App() {
               <Field label="Closing costs" id="closingPct" value={fields.closingPct} onChange={set('closingPct')} suffix="%" />
             </FieldRow>
             <Field label="Renovation budget" id="reno" value={fields.reno} onChange={set('reno')} prefix="$" />
-            <div style={{ display:'flex', gap:6, marginTop:-6, marginBottom:12 }}>
+            <div style={{ fontSize:11, color:'var(--text3)', marginTop:-8, marginBottom:6, lineHeight:1.4 }}>
+              How is the renovation funded?
+            </div>
+            <div style={{ display:'flex', gap:6, marginBottom:12 }}>
               {['Cash','Financed'].map(opt => (
                 <button key={opt} onClick={() => setFields(f => ({...f, renoFinanced: opt==='Financed'}))}
                   style={{ flex:1, padding:'6px', fontSize:12, fontWeight:500, borderRadius:6, cursor:'pointer', fontFamily:'var(--font)',
@@ -860,13 +838,49 @@ export default function App() {
             <Divider />
             <SectionLabel icon="currency-dollar">Income</SectionLabel>
             <Field label="Monthly rent" id="rent" value={fields.rent} onChange={set('rent')} prefix="$" />
+            <Field label="Other income (laundry, parking, etc.)" id="otherIncome" value={fields.otherIncome} onChange={set('otherIncome')} prefix="$" />
             <Field label="Vacancy rate" id="vacancyPct" value={fields.vacancyPct} onChange={set('vacancyPct')} suffix="%" />
             <Divider />
             <SectionLabel icon="receipt">Monthly expenses</SectionLabel>
-            <Field label="Property taxes" id="taxes" value={fields.taxes} onChange={set('taxes')} prefix="$" />
-            <Field label="Insurance" id="insurance" value={fields.insurance} onChange={set('insurance')} prefix="$" />
+            <FieldRow>
+              <Field label="Property taxes (yearly)" id="taxesYearly" value={fields.taxesYearly} onChange={val => setFields(f => ({...f, taxesYearly: parseFloat(val)||0, taxes: Math.round((parseFloat(val)||0)/12)}))} prefix="$" />
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, fontWeight:500, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Monthly</div>
+                <div style={{ padding:'8px 10px', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, color:'var(--text3)' }}>{fmt(metrics.taxes)}/mo</div>
+              </div>
+            </FieldRow>
+            <FieldRow>
+              <Field label="Insurance (yearly)" id="insuranceYearly" value={fields.insuranceYearly} onChange={val => setFields(f => ({...f, insuranceYearly: parseFloat(val)||0, insurance: Math.round((parseFloat(val)||0)/12)}))} prefix="$" />
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, fontWeight:500, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Monthly</div>
+                <div style={{ padding:'8px 10px', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, color:'var(--text3)' }}>{fmt(metrics.insurance)}/mo</div>
+              </div>
+            </FieldRow>
             <Field label="Property management" id="mgmtPct" value={fields.mgmtPct} onChange={set('mgmtPct')} suffix="%" />
-            <Field label="Maintenance / CapEx" id="maintenance" value={fields.maintenance} onChange={set('maintenance')} prefix="$" />
+            <div style={{ marginBottom:12 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+                <label style={{ fontSize:12, fontWeight:500, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Maintenance / CapEx</label>
+                <div style={{ display:'flex', gap:4 }}>
+                  {['$','%'].map(m => (
+                    <button key={m} onClick={() => setMaintenanceMode(m)} style={{ padding:'2px 8px', fontSize:11, borderRadius:4, cursor:'pointer', fontFamily:'var(--font)', background: maintenanceMode===m ? '#1a5fa8' : 'var(--surface2)', color: maintenanceMode===m ? '#fff' : 'var(--text2)', border:'1px solid var(--border)' }}>{m}</button>
+                  ))}
+                </div>
+              </div>
+              {maintenanceMode === '$'
+                ? <div style={{ position:'relative' }}>
+                    <span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>$</span>
+                    <input type="number" value={fields.maintenance} onChange={e => set('maintenance')(e.target.value)} onFocus={e => e.target.select()} style={{ paddingLeft:18 }} />
+                  </div>
+                : <div style={{ position:'relative' }}>
+                    <input type="number" value={fields.maintenancePct} onChange={e => set('maintenancePct')(e.target.value)} onFocus={e => e.target.select()} style={{ paddingRight:28 }} />
+                    <span style={{ position:'absolute', right:9, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--text3)', pointerEvents:'none' }}>% rent</span>
+                  </div>
+              }
+              <div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>
+                {maintenanceMode === '%' ? `= ${fmt(metrics.maintenance)}/mo (${fields.maintenancePct}% of effective rent)` : 'Industry avg: 8-10% of gross rent'}
+              </div>
+            </div>
+            <Field label="Other monthly expenses (utilities, lawn, etc.)" id="otherExpenses" value={fields.otherExpenses} onChange={set('otherExpenses')} prefix="$" />
             <Divider />
             <SectionLabel icon="building-bank">Financing</SectionLabel>
             <Field label="Interest rate" id="rate" value={fields.rate} onChange={set('rate')} suffix="%" />
@@ -955,6 +969,11 @@ export default function App() {
                     </div>
                   ))}
                 </div>
+                {(() => { const d = dscrMessage(); return d ? (
+                  <div style={{ marginTop:14, padding:'10px 14px', background:d.bg, borderRadius:8, fontSize:12, color:d.color, lineHeight:1.5 }}>
+                    <strong>DSCR insight:</strong> {d.text}
+                  </div>
+                ) : null })()}
                 <div style={{ marginTop:14, paddingTop:12, borderTop:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
                   <div style={{ fontSize:11, color:'var(--text2)', fontWeight:500 }}>Est. expenses:</div>
                   <span style={{ fontSize:11, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:4, padding:'2px 8px' }}>Insurance: {fmt(metrics.insurance)}/mo</span>
