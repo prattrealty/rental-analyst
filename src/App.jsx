@@ -1006,6 +1006,27 @@ export default function App() {
                 </div>
             }
             <RentSlider rent={fields.rent || 1500} onChange={v => setSliderRent(v)} />
+            <div style={{ background:'var(--navy)', borderRadius:12, padding:'18px 20px', marginBottom:18, display:'flex', alignItems:'flex-start', gap:14 }}>
+              <div style={{ width:44, height:44, borderRadius:10, background:'rgba(77,168,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <i className="ti ti-home-dollar" style={{ fontSize:22, color:'#4da8ff' }} />
+              </div>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', textTransform:'uppercase', letterSpacing:'1px', marginBottom:4 }}>Built by</div>
+                <div style={{ fontSize:15, fontWeight:700, color:'#fff', marginBottom:2 }}>Scott O. Pratt, Broker</div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,0.6)', marginBottom:8 }}>Pratt & Associates · Woodstock, GA</div>
+                <div style={{ fontSize:12, color:'rgba(255,255,255,0.75)', lineHeight:1.5, marginBottom:12, fontStyle:'italic' }}>
+                  "I built this tool so investors could see what I see. If the numbers work — let's make it happen."
+                </div>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                  <a href="tel:6784147399" style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 12px', background:'rgba(255,255,255,0.1)', borderRadius:6, fontSize:12, color:'#fff', textDecoration:'none', fontWeight:500 }}>
+                    <i className="ti ti-phone" style={{ fontSize:13 }} /> (678) 414-7399
+                  </a>
+                  <a href="mailto:paroffice@gmail.com" style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 12px', background:'#1a5fa8', borderRadius:6, fontSize:12, color:'#fff', textDecoration:'none', fontWeight:500 }}>
+                    <i className="ti ti-mail" style={{ fontSize:13 }} /> Email Scott
+                  </a>
+                </div>
+              </div>
+            </div>
             <CompsCard comps={comps} loading={compsLoading} />
             <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'20px 20px 10px' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:2 }}>
