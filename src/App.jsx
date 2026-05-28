@@ -810,6 +810,12 @@ export default function App() {
               <Field label="Down payment" id="downPct" value={fields.downPct} onChange={set('downPct')} suffix="%" />
               <Field label="Closing costs" id="closingPct" value={fields.closingPct} onChange={set('closingPct')} suffix="%" />
             </FieldRow>
+            {fields.price > 0 && fields.downPct < 100 && (
+              <div style={{ background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, padding:'8px 12px', fontSize:12, marginBottom:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <span style={{ color:'var(--text2)' }}>💵 Down: <strong style={{ color:'var(--text)' }}>{fmt(metrics.down)}</strong></span>
+                <span style={{ color:'var(--text2)' }}>🏦 Financed: <strong style={{ color:'#1a5fa8' }}>{fmt(metrics.loanAmt)}</strong></span>
+              </div>
+            )}
             {fields.downPct >= 100 && (
               <div style={{ background:'#eaf3de', border:'1px solid #b7d9a0', borderRadius:6, padding:'6px 10px', fontSize:11, color:'#3b6d11', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
                 <i className="ti ti-cash" style={{ fontSize:13 }} /> Cash purchase — no mortgage
