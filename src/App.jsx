@@ -594,7 +594,7 @@ const [authLoading, setAuthLoading] = useState(true)
   }
   setAuthLoading(false)
 })
-    })
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSupaUser(session?.user ?? null)
     })
