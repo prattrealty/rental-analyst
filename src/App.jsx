@@ -1,5 +1,7 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { supabase } from './supabaseClient'
+import Auth from './Auth'
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js');
@@ -580,6 +582,18 @@ const DEFAULT_FIELDS = {
 }
 
 export default function App() {
+  const [supaUser, setSupaUser] = useState(null)
+const [authLoading, setAuthLoading] = useState(true)
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSupaUser(session?.user ?? null)
+      setAuthLoading(false)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSupaUser(session?.user ?? null)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
   const [tab, setTab] = useState('analyzer')
   const [isMobile, setIsMobile] = useState(false)
   const [showWalkthrough, setShowWalkthrough] = useState(() => !localStorage.getItem('ra_toured'))
@@ -708,6 +722,8 @@ export default function App() {
 
   const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
 
+if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:80}}>Loading...</div>
+  if (!supaUser) return <Auth />
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
       <a href="#main-content" className="skip-nav">Skip to main content</a>
