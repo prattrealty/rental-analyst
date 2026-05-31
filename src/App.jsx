@@ -611,7 +611,7 @@ const [authLoading, setAuthLoading] = useState(true)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [upgradeTrigger, setUpgradeTrigger] = useState('general')
   const [showSignup, setShowSignup] = useState(false)
-  const [user, setUser] = useState(() => { try { return JSON.parse(localStorage.getItem('ra_user')||'null') } catch { return null } })
+ 
   const [signupForm, setSignupForm] = useState({ firstName:'', email:'', password:'', agreed:false })
   const [signupError, setSignupError] = useState('')
   const [isPro, setIsPro] = useState(() => localStorage.getItem('ra_pro') === 'true')
@@ -745,8 +745,8 @@ if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:
         if (signupForm.password.length < 6) { setSignupError('Password must be at least 6 characters.'); return }
         if (!signupForm.agreed) { setSignupError('Please agree to receive updates.'); return }
         const newUser = { firstName: signupForm.firstName, email: signupForm.email, joinedAt: new Date().toISOString() }
-        setUser(newUser)
-        localStorage.setItem('ra_user', JSON.stringify(newUser))
+      
+        
         setShowSignup(false); setSignupError('')
         showToast(`Welcome, ${signupForm.firstName}! Now save your first property.`)
         fetch('https://script.google.com/macros/s/AKfycbwb4OwFfCC7NsQrpdmtUfdM6S-AsRkXVpqutyGYt6WfJvTx5exHyNmXXFdeBaQqXfZ8JA/exec', { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) })
