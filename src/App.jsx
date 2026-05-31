@@ -585,9 +585,15 @@ export default function App() {
   const [supaUser, setSupaUser] = useState(null)
 const [authLoading, setAuthLoading] = useState(true)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSupaUser(session?.user ?? null)
-      setAuthLoading(false)
+   supabase.auth.getSession().then(async ({ data: { session } }) => {
+  const user = session?.user ?? null
+  setSupaUser(user)
+  if (user) {
+    const { data } = await supabase.from('properties').select('data').eq('user_id', user.id).order('created_at', { ascending: true })
+    if (data) setSaved(data.map(r => r.data))
+  }
+  setAuthLoading(false)
+})
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSupaUser(session?.user ?? null)
@@ -609,7 +615,7 @@ const [authLoading, setAuthLoading] = useState(true)
   const [signupForm, setSignupForm] = useState({ firstName:'', email:'', password:'', agreed:false })
   const [signupError, setSignupError] = useState('')
   const [isPro, setIsPro] = useState(() => localStorage.getItem('ra_pro') === 'true')
-  const [saved, setSaved] = useState(() => { try { return JSON.parse(localStorage.getItem('ra_portfolio')||'[]') } catch { return [] } })
+  const [saved, setSaved] = useState([]) 
   const [comps, setComps] = useState([])
   const [compsLoading, setCompsLoading] = useState(false)
   const [sliderRent, setSliderRent] = useState(0)
@@ -634,21 +640,25 @@ const [authLoading, setAuthLoading] = useState(true)
 
   const openUpgrade = (trigger='general') => { setUpgradeTrigger(trigger); setShowUpgrade(true) }
 
-  const handleSave = () => {
-    if (!user) { setShowSignup(true); return }
-    if (!isPro && saved.length >= FREE_LIMIT) { openUpgrade('save'); return }
-    const entry = { id:Date.now(), fields:{...fields}, metrics }
-    const next = [...saved, entry]
-    setSaved(next)
-    localStorage.setItem('ra_portfolio', JSON.stringify(next))
-    showToast(`Property saved! ${!isPro ? `${next.length}/${FREE_LIMIT} free saves used.` : ''}`)
-  }
+const handleSave = async () => {
+  if (!supaUser) return
+  if (!isPro && saved.length >= FREE_LIMIT) { openUpgrade('save'); return }
+  const entry = { id: Date.now(), fields: { ...fields }, metrics }
+  const { error } = await supabase.from('properties').insert({
+    user_id: supaUser.id,
+    address: fields.address || 'Unnamed',
+    data: entry
+  })
+  if (error) { showToast('Error saving property.', 'error'); return }
+  const next = [...saved, entry]
+  setSaved(next)
+  showToast(`Property saved! ${!isPro ? `${next.length}/${FREE_LIMIT} free saves used.` : ''}`)
+}
 
-  const handleDelete = (id) => {
-    const next = saved.filter(p => p.id !== id)
-    setSaved(next)
-    localStorage.setItem('ra_portfolio', JSON.stringify(next))
-  }
+const handleDelete = async (id) => {
+  await supabase.from('properties').delete().eq('data->>id', String(id)).eq('user_id', supaUser.id)
+  setSaved(prev => prev.filter(p => p.id !== id))
+}
 
   const handleUpgrade = () => {
     setIsPro(true)
