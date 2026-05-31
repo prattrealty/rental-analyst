@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
@@ -760,6 +760,9 @@ if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:
               <i className="ti ti-bolt" style={{ fontSize:13 }} /> Go Pro
             </button>
           )}
+         <button onClick={() => supabase.auth.signOut()} aria-label="Sign out" title="Sign out" style={{ marginLeft:4, padding:'6px 10px', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:6, fontSize:16, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center' }}>
+  <i className="ti ti-logout" />
+</button>
         </div>
       </header>
       {tab==='analyzer' && (
