@@ -62,17 +62,14 @@ function calcMetrics(f) {
   const onePercentRule = price > 0 ? (rent / price) * 100 : 0
   const onePercentPass = onePercentRule >= 1
 
-  // ARV-based DSCR refi analysis
   const arvRate = rate > 0 ? rate : 7.25
   const targetDscr = 1.25
-  // Max loan where DSCR = 1.25: loan = NOI / 1.25 / monthly_rate_factor
   const monthlyRateFactor = arvRate / 100 / 12
   const n = term * 12
   const mortgageConstant = monthlyRateFactor > 0 ? (monthlyRateFactor * Math.pow(1 + monthlyRateFactor, n)) / (Math.pow(1 + monthlyRateFactor, n) - 1) : 1 / n
   const maxLoanForDscr = noi > 0 && mortgageConstant > 0 ? Math.floor((noi / targetDscr) / mortgageConstant) : 0
   const cashOutPotential = maxLoanForDscr - loanAmt
 
-  // For financed deals: what rent or price needed to hit 1.25x
   const rentNeededForDscr = !isCashDeal && monthlyMortgage > 0 ? Math.ceil((monthlyMortgage * targetDscr + totalExpenses - otherIncome) / (1 - vacancyPct / 100)) : 0
   const priceNeededForDscr = !isCashDeal && rate > 0 ? (() => {
     let lo = price * 0.5, hi = price
@@ -144,7 +141,6 @@ function calcDealScore(metrics) {
   let score = 0
   const breakdown = []
 
-  // Cap rate: 35 pts (DSCR removed, points redistributed here)
   const capPts = metrics.capRate >= 8 ? 35 : metrics.capRate >= 6 ? 26 : metrics.capRate >= 5 ? 18 : metrics.capRate >= 3 ? 9 : 2
   score += capPts
   breakdown.push({ label: 'Cap rate', score: capPts, max: 35, value: metrics.capRate.toFixed(2) + '%' })
@@ -157,7 +153,6 @@ function calcDealScore(metrics) {
   score += gyPts
   breakdown.push({ label: 'Gross yield', score: gyPts, max: 20, value: metrics.grossYield.toFixed(2) + '%' })
 
-  // Cash flow: 18 pts (redistributed from DSCR)
   const cfPts = metrics.cashflow >= 300 ? 18 : metrics.cashflow >= 100 ? 12 : metrics.cashflow >= 0 ? 6 : 0
   score += cfPts
   breakdown.push({ label: 'Monthly cash flow', score: cfPts, max: 18, value: '$' + Math.round(metrics.cashflow) + '/mo' })
@@ -496,73 +491,180 @@ const CustomTooltip = ({ active, payload, label }) => {
   )
 }
 
-function Portfolio({ saved, onDelete, isPro, onUpgrade }) {
-  const totalCF = saved.reduce((s,p) => s + p.metrics.cashflow, 0)
-  const totalEquity = saved.reduce((s,p) => s + (p.metrics.chartData[4]?.equity||0), 0)
-  if (!isPro && saved.length === 0) return (
-    <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'var(--text2)', padding:40 }}>
-      <i className="ti ti-briefcase" style={{ fontSize:48, color:'var(--text3)' }} />
-      <div style={{ fontSize:16, fontWeight:500, color:'var(--text)' }}>No saved properties yet</div>
-      <div style={{ fontSize:13 }}>Save up to {FREE_LIMIT} properties on the free plan.</div>
+// ── DEAL ALERTS COMPONENT ──────────────────────────────────────────────────
+function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed }) {
+  const unread = deals.filter(d => !viewedIds.has(d.id))
+  if (deals.length === 0) return (
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'var(--text2)', padding:40, textAlign:'center' }}>
+      <i className="ti ti-bell" style={{ fontSize:48, color:'var(--text3)' }} />
+      <div style={{ fontSize:16, fontWeight:500, color:'var(--text)' }}>No deal alerts yet</div>
+      <div style={{ fontSize:13, maxWidth:280 }}>When any property analyzed in the app scores 70 or above, it automatically appears here for all users.</div>
     </div>
   )
   return (
     <div style={{ flex:1, overflowY:'auto', padding:24 }}>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:12, marginBottom:24 }}>
-        {[
-          { label:'Properties', value:`${saved.length}${!isPro ? ` / ${FREE_LIMIT}` : ''}` },
-          { label:'Total monthly CF', value:fmt(totalCF), color:totalCF>=0?'var(--green)':'var(--red)' },
-          { label:'Portfolio equity (Yr 5)', value:`$${totalEquity}K` },
-        ].map(m => (
-          <div key={m.label} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
-            <div style={{ fontSize:11, color:'var(--text2)', marginBottom:4 }}>{m.label}</div>
-            <div style={{ fontSize:22, fontWeight:600, color:m.color||'var(--text)' }}>{m.value}</div>
-          </div>
-        ))}
-      </div>
-      {!isPro && (
-        <div style={{ background:'#f0f7ff', border:'1px solid #c0d8f0', borderRadius:10, padding:'14px 16px', marginBottom:18, display:'flex', alignItems:'center', gap:12 }}>
-          <i className="ti ti-lock" style={{ fontSize:20, color:'#1a5fa8' }} />
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:13, fontWeight:500, color:'#0f2744' }}>Free plan: {saved.length}/{FREE_LIMIT} properties saved</div>
-            <div style={{ fontSize:12, color:'#1a5fa8' }}>Upgrade to Pro for unlimited saves, PDF exports & full portfolio analytics.</div>
-          </div>
-          <button onClick={onUpgrade} style={{ padding:'7px 14px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)', whiteSpace:'nowrap' }}>Go Pro</button>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+        <div>
+          <div style={{ fontSize:17, fontWeight:700, color:'var(--text)' }}>🔥 Deal Alerts</div>
+          <div style={{ fontSize:12, color:'var(--text2)', marginTop:2 }}>Properties that scored 70+ — auto-flagged by the algorithm</div>
         </div>
-      )}
+        {unread.length > 0 && (
+          <span style={{ background:'#a32d2d', color:'#fff', fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:10 }}>{unread.length} new</span>
+        )}
+      </div>
       <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-        {saved.map(p => (
-          <div key={p.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:16 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
-              <div>
-                <div style={{ fontWeight:600, fontSize:15 }}>{p.fields.address||'Unnamed property'}</div>
-                <div style={{ fontSize:12, color:'var(--text2)' }}>{fmt(p.fields.price)} · {p.fields.neighborhood}</div>
-              </div>
-              <button onClick={() => onDelete(p.id)} aria-label="Delete saved property" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', fontSize:16 }}><i className="ti ti-trash" /></button>
-            </div>
-            <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
-              {[
-                { label:'Cash flow', value:fmt(p.metrics.cashflow)+'/mo', pos:p.metrics.cashflow>=0 },
-                { label:'Cap rate', value:fmtPct(p.metrics.capRate) },
-                { label:'CoC return', value:fmtPct(p.metrics.coc), pos:p.metrics.coc>=0 },
-                { label:'Gross yield', value:fmtPct(p.metrics.grossYield) },
-              ].map(m => (
-                <div key={m.label}>
-                  <div style={{ fontSize:11, color:'var(--text2)' }}>{m.label}</div>
-                  <div style={{ fontWeight:600, color:m.pos===false?'var(--red)':m.pos?'var(--green)':'var(--text)' }}>{m.value}</div>
+        {deals.map(deal => {
+          const isNew = !viewedIds.has(deal.id)
+          const d = deal.data || {}
+          const m = d.metrics || {}
+          const f = d.fields || {}
+          const scoreResult = calcDealScore(m)
+          const score = scoreResult?.score || deal.deal_score
+          const grade = scoreResult?.grade || { color:'#1a7a4a', emoji:'🟢', label:'Strong Deal' }
+          return (
+            <div key={deal.id} style={{ background:'var(--surface)', border: isNew ? '2px solid ' + grade.color : '1px solid var(--border)', borderRadius:12, padding:16, position:'relative', cursor:'pointer', transition:'box-shadow 0.2s' }}
+              onClick={() => { onLoadDeal(d); onMarkViewed(deal.id) }}
+              onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow='none'}>
+              {isNew && (
+                <div style={{ position:'absolute', top:12, right:12, background:grade.color, color:'#fff', fontSize:9, fontWeight:700, padding:'2px 8px', borderRadius:10, letterSpacing:'0.5px' }}>NEW</div>
+              )}
+              <div style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:12 }}>
+                <div style={{ width:52, height:52, borderRadius:10, background:grade.color + '22', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <div style={{ fontSize:18, fontWeight:700, color:grade.color, lineHeight:1 }}>{score}</div>
+                  <div style={{ fontSize:9, color:grade.color, fontWeight:600 }}>SCORE</div>
                 </div>
-              ))}
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', marginBottom:2 }}>{deal.address || f.address || 'Featured Deal'}</div>
+                  <div style={{ fontSize:12, color:'var(--text2)' }}>{grade.emoji} {grade.label} · {new Date(deal.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' })}</div>
+                </div>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
+                {[
+                  { label:'Cash flow', value: m.cashflow !== undefined ? fmt(m.cashflow)+'/mo' : '—', pos: m.cashflow >= 0 },
+                  { label:'Cap rate', value: m.capRate !== undefined ? fmtPct(m.capRate) : '—' },
+                  { label:'CoC return', value: m.coc !== undefined ? fmtPct(m.coc) : '—', pos: m.coc >= 0 },
+                  { label:'Price', value: f.price ? fmtK(f.price) : '—' },
+                ].map(stat => (
+                  <div key={stat.label} style={{ background:'var(--surface2)', borderRadius:6, padding:'8px 10px' }}>
+                    <div style={{ fontSize:10, color:'var(--text3)', marginBottom:2 }}>{stat.label}</div>
+                    <div style={{ fontSize:13, fontWeight:600, color: stat.pos === false ? 'var(--red)' : stat.pos ? 'var(--green)' : 'var(--text)' }}>{stat.value}</div>
+                  </div>
+                ))}
+              </div>
+              <button style={{ width:'100%', padding:'8px', background:grade.color, color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                <i className="ti ti-calculator" style={{ fontSize:13 }} /> Load Full Analysis
+              </button>
             </div>
-          </div>
+          )
+        })}
+      </div>
+      <div style={{ marginTop:20, padding:'12px 16px', background:'var(--surface2)', borderRadius:8, fontSize:11, color:'var(--text3)', textAlign:'center', lineHeight:1.5 }}>
+        Deals auto-flag when Deal Score hits 70+. One alert per property, ever. · <em>Not financial advice — always do your own due diligence.</em>
+      </div>
+    </div>
+  )
+}
+
+// ── PORTFOLIO COMPONENT ────────────────────────────────────────────────────
+function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealIds, onLoadDeal, onMarkViewed }) {
+  const [portfolioTab, setPortfolioTab] = useState('properties')
+  const unreadCount = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
+  const totalCF = saved.reduce((s,p) => s + p.metrics.cashflow, 0)
+  const totalEquity = saved.reduce((s,p) => s + (p.metrics.chartData[4]?.equity||0), 0)
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden' }}>
+      {/* Sub-tabs */}
+      <div style={{ display:'flex', background:'var(--surface)', borderBottom:'1px solid var(--border)', padding:'0 24px', flexShrink:0 }}>
+        {[
+          { key:'properties', label:'My Properties', icon:'ti-briefcase' },
+          { key:'alerts', label:'Deal Alerts', icon:'ti-bell' },
+        ].map(t => (
+          <button key={t.key} onClick={() => setPortfolioTab(t.key)} style={{ padding:'12px 16px', fontSize:13, fontWeight:500, cursor:'pointer', border:'none', borderBottom: portfolioTab===t.key ? '2px solid #1a5fa8' : '2px solid transparent', background:'transparent', color: portfolioTab===t.key ? '#1a5fa8' : 'var(--text2)', fontFamily:'var(--font)', display:'flex', alignItems:'center', gap:6, marginRight:4 }}>
+            <i className={`ti ${t.icon}`} style={{ fontSize:14 }} />
+            {t.label}
+            {t.key === 'alerts' && unreadCount > 0 && (
+              <span style={{ background:'#a32d2d', color:'#fff', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:700 }}>{unreadCount}</span>
+            )}
+            {t.key === 'properties' && saved.length > 0 && (
+              <span style={{ background:'var(--border)', color:'var(--text2)', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:600 }}>{saved.length}</span>
+            )}
+          </button>
         ))}
       </div>
-      {!isPro && (
-        <div style={{ marginTop:20 }}>
-          <div style={{ fontSize:12, color:'var(--text3)', marginBottom:10, textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:600 }}>Pro features preview</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-            <ProFeatureBlur label="PDF Report Export" icon="ti-file-description" onUpgrade={onUpgrade} />
-            <ProFeatureBlur label="Rent Comp History" icon="ti-history" onUpgrade={onUpgrade} />
-          </div>
+
+      {portfolioTab === 'alerts' ? (
+        <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} />
+      ) : (
+        <div style={{ flex:1, overflowY:'auto', padding:24 }}>
+          {saved.length === 0 && !isPro ? (
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'var(--text2)', padding:40 }}>
+              <i className="ti ti-briefcase" style={{ fontSize:48, color:'var(--text3)' }} />
+              <div style={{ fontSize:16, fontWeight:500, color:'var(--text)' }}>No saved properties yet</div>
+              <div style={{ fontSize:13 }}>Save up to {FREE_LIMIT} properties on the free plan.</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:12, marginBottom:24 }}>
+                {[
+                  { label:'Properties', value:`${saved.length}${!isPro ? ` / ${FREE_LIMIT}` : ''}` },
+                  { label:'Total monthly CF', value:fmt(totalCF), color:totalCF>=0?'var(--green)':'var(--red)' },
+                  { label:'Portfolio equity (Yr 5)', value:`$${totalEquity}K` },
+                ].map(m => (
+                  <div key={m.label} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
+                    <div style={{ fontSize:11, color:'var(--text2)', marginBottom:4 }}>{m.label}</div>
+                    <div style={{ fontSize:22, fontWeight:600, color:m.color||'var(--text)' }}>{m.value}</div>
+                  </div>
+                ))}
+              </div>
+              {!isPro && (
+                <div style={{ background:'#f0f7ff', border:'1px solid #c0d8f0', borderRadius:10, padding:'14px 16px', marginBottom:18, display:'flex', alignItems:'center', gap:12 }}>
+                  <i className="ti ti-lock" style={{ fontSize:20, color:'#1a5fa8' }} />
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:500, color:'#0f2744' }}>Free plan: {saved.length}/{FREE_LIMIT} properties saved</div>
+                    <div style={{ fontSize:12, color:'#1a5fa8' }}>Upgrade to Pro for unlimited saves, PDF exports & full portfolio analytics.</div>
+                  </div>
+                  <button onClick={onUpgrade} style={{ padding:'7px 14px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)', whiteSpace:'nowrap' }}>Go Pro</button>
+                </div>
+              )}
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                {saved.map(p => (
+                  <div key={p.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:16 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
+                      <div>
+                        <div style={{ fontWeight:600, fontSize:15 }}>{p.fields.address||'Unnamed property'}</div>
+                        <div style={{ fontSize:12, color:'var(--text2)' }}>{fmt(p.fields.price)} · {p.fields.neighborhood}</div>
+                      </div>
+                      <button onClick={() => onDelete(p.id)} aria-label="Delete saved property" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', fontSize:16 }}><i className="ti ti-trash" /></button>
+                    </div>
+                    <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
+                      {[
+                        { label:'Cash flow', value:fmt(p.metrics.cashflow)+'/mo', pos:p.metrics.cashflow>=0 },
+                        { label:'Cap rate', value:fmtPct(p.metrics.capRate) },
+                        { label:'CoC return', value:fmtPct(p.metrics.coc), pos:p.metrics.coc>=0 },
+                        { label:'Gross yield', value:fmtPct(p.metrics.grossYield) },
+                      ].map(m => (
+                        <div key={m.label}>
+                          <div style={{ fontSize:11, color:'var(--text2)' }}>{m.label}</div>
+                          <div style={{ fontWeight:600, color:m.pos===false?'var(--red)':m.pos?'var(--green)':'var(--text)' }}>{m.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {!isPro && (
+                <div style={{ marginTop:20 }}>
+                  <div style={{ fontSize:12, color:'var(--text3)', marginBottom:10, textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:600 }}>Pro features preview</div>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    <ProFeatureBlur label="PDF Report Export" icon="ti-file-description" onUpgrade={onUpgrade} />
+                    <ProFeatureBlur label="Rent Comp History" icon="ti-history" onUpgrade={onUpgrade} />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
@@ -583,23 +685,33 @@ const DEFAULT_FIELDS = {
 
 export default function App() {
   const [supaUser, setSupaUser] = useState(null)
-const [authLoading, setAuthLoading] = useState(true)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [dealAlerts, setDealAlerts] = useState([])
+  const [viewedDealIds, setViewedDealIds] = useState(new Set())
+
   useEffect(() => {
-   supabase.auth.getSession().then(async ({ data: { session } }) => {
-  const user = session?.user ?? null
-  setSupaUser(user)
-  if (user) {
-    const { data } = await supabase.from('properties').select('data').eq('user_id', user.id).order('created_at', { ascending: true })
-    if (data) setSaved(data.map(r => r.data))
-  }
-  setAuthLoading(false)
-})
-    
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const user = session?.user ?? null
+      setSupaUser(user)
+      if (user) {
+        // Load saved properties
+        const { data: propData } = await supabase.from('properties').select('data').eq('user_id', user.id).order('created_at', { ascending: true })
+        if (propData) setSaved(propData.map(r => r.data))
+        // Load deal alerts
+        const { data: alertData } = await supabase.from('deal_alerts').select('*').order('created_at', { ascending: false })
+        if (alertData) setDealAlerts(alertData)
+        // Load which deals this user has viewed
+        const { data: viewData } = await supabase.from('deal_alert_views').select('deal_id').eq('user_id', user.id)
+        if (viewData) setViewedDealIds(new Set(viewData.map(v => v.deal_id)))
+      }
+      setAuthLoading(false)
+    })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSupaUser(session?.user ?? null)
     })
     return () => subscription.unsubscribe()
   }, [])
+
   const [tab, setTab] = useState('analyzer')
   const [isMobile, setIsMobile] = useState(false)
   const [showWalkthrough, setShowWalkthrough] = useState(() => !localStorage.getItem('ra_toured'))
@@ -611,11 +723,10 @@ const [authLoading, setAuthLoading] = useState(true)
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [upgradeTrigger, setUpgradeTrigger] = useState('general')
   const [showSignup, setShowSignup] = useState(false)
- 
   const [signupForm, setSignupForm] = useState({ firstName:'', email:'', password:'', agreed:false })
   const [signupError, setSignupError] = useState('')
   const [isPro, setIsPro] = useState(() => localStorage.getItem('ra_pro') === 'true')
-  const [saved, setSaved] = useState([]) 
+  const [saved, setSaved] = useState([])
   const [comps, setComps] = useState([])
   const [compsLoading, setCompsLoading] = useState(false)
   const [sliderRent, setSliderRent] = useState(0)
@@ -640,25 +751,62 @@ const [authLoading, setAuthLoading] = useState(true)
 
   const openUpgrade = (trigger='general') => { setUpgradeTrigger(trigger); setShowUpgrade(true) }
 
-const handleSave = async () => {
-  if (!supaUser) return
-  if (!isPro && saved.length >= FREE_LIMIT) { openUpgrade('save'); return }
-  const entry = { id: Date.now(), fields: { ...fields }, metrics }
-  const { error } = await supabase.from('properties').insert({
-    user_id: supaUser.id,
-    address: fields.address || 'Unnamed',
-    data: entry
-  })
-  if (error) { showToast('Error saving property.', 'error'); return }
-  const next = [...saved, entry]
-  setSaved(next)
-  showToast(`Property saved! ${!isPro ? `${next.length}/${FREE_LIMIT} free saves used.` : ''}`)
-}
+  // Mark a deal as viewed by this user
+  const handleMarkViewed = async (dealId) => {
+    if (viewedDealIds.has(dealId)) return
+    setViewedDealIds(prev => new Set([...prev, dealId]))
+    await supabase.from('deal_alert_views').upsert({ user_id: supaUser.id, deal_id: dealId }, { onConflict: 'user_id,deal_id' })
+  }
 
-const handleDelete = async (id) => {
-  await supabase.from('properties').delete().eq('data->>id', String(id)).eq('user_id', supaUser.id)
-  setSaved(prev => prev.filter(p => p.id !== id))
-}
+  // Load a deal alert into the analyzer
+  const handleLoadDeal = (dealData) => {
+    if (dealData?.fields) {
+      setFields({ ...DEFAULT_FIELDS, ...dealData.fields })
+      setSliderRent(0)
+      setTab('analyzer')
+      showToast('Deal loaded! Review the full analysis below.')
+    }
+  }
+
+  const handleSave = async () => {
+    if (!supaUser) return
+    if (!isPro && saved.length >= FREE_LIMIT) { openUpgrade('save'); return }
+    const entry = { id: Date.now(), fields: { ...fields }, metrics }
+    const { error } = await supabase.from('properties').insert({
+      user_id: supaUser.id,
+      address: fields.address || 'Unnamed',
+      data: entry
+    })
+    if (error) { showToast('Error saving property.', 'error'); return }
+    const next = [...saved, entry]
+    setSaved(next)
+    showToast(`Property saved! ${!isPro ? `${next.length}/${FREE_LIMIT} free saves used.` : ''}`)
+
+    // Auto-flag as deal alert if score >= 70
+    const scoreResult = calcDealScore(metrics)
+    if (scoreResult && scoreResult.score >= 70) {
+      const address = fields.address || 'Unnamed'
+      // Check for duplicate — don't alert same address twice
+      const { data: existing } = await supabase.from('deal_alerts').select('id').eq('address', address).limit(1)
+      if (!existing || existing.length === 0) {
+        const { data: newAlert } = await supabase.from('deal_alerts').insert({
+          address,
+          zip: fields.zip || null,
+          deal_score: scoreResult.score,
+          data: entry
+        }).select().single()
+        if (newAlert) {
+          setDealAlerts(prev => [newAlert, ...prev])
+          showToast(`🔥 Deal Score ${scoreResult.score} — this property was added to Deal Alerts for all users!`)
+        }
+      }
+    }
+  }
+
+  const handleDelete = async (id) => {
+    await supabase.from('properties').delete().eq('data->>id', String(id)).eq('user_id', supaUser.id)
+    setSaved(prev => prev.filter(p => p.id !== id))
+  }
 
   const handleUpgrade = () => {
     setIsPro(true)
@@ -731,9 +879,11 @@ const handleDelete = async (id) => {
   }
 
   const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
+  const totalUnread = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
 
-if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:80}}>Loading...</div>
+  if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:80}}>Loading...</div>
   if (!supaUser) return <Auth />
+
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
       <a href="#main-content" className="skip-nav">Skip to main content</a>
@@ -745,12 +895,11 @@ if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:
         if (signupForm.password.length < 6) { setSignupError('Password must be at least 6 characters.'); return }
         if (!signupForm.agreed) { setSignupError('Please agree to receive updates.'); return }
         const newUser = { firstName: signupForm.firstName, email: signupForm.email, joinedAt: new Date().toISOString() }
-      
-        
         setShowSignup(false); setSignupError('')
         showToast(`Welcome, ${signupForm.firstName}! Now save your first property.`)
         fetch('https://script.google.com/macros/s/AKfycbwb4OwFfCC7NsQrpdmtUfdM6S-AsRkXVpqutyGYt6WfJvTx5exHyNmXXFdeBaQqXfZ8JA/exec', { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) })
       }} />}
+
       <header style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }} role="banner">
         <div style={{ display:'flex', alignItems:'center', gap:8, fontWeight:600, fontSize:15, letterSpacing:'-0.3px' }}>
           <i className="ti ti-home-dollar" style={{ fontSize:20, color:'#4da8ff' }} />
@@ -762,7 +911,12 @@ if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:
             <button key={t} onClick={() => setTab(t)} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{ padding:'6px 14px', borderRadius:6, fontSize:13, cursor:'pointer', border:'none', background:tab===t?'rgba(255,255,255,0.15)':'transparent', color:tab===t?'#fff':'rgba(255,255,255,0.55)', display:'flex', alignItems:'center', gap:6, fontFamily:'var(--font)' }}>
               <i className={`ti ti-${t==='analyzer'?'calculator':'briefcase'}`} style={{ fontSize:14 }} />
               {t.charAt(0).toUpperCase()+t.slice(1)}
-              {t==='portfolio' && saved.length>0 && <span style={{ background:'#4da8ff', color:'#fff', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:600 }}>{saved.length}</span>}
+              {t==='portfolio' && totalUnread > 0 && (
+                <span style={{ background:'#a32d2d', color:'#fff', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:700 }}>{totalUnread}</span>
+              )}
+              {t==='portfolio' && totalUnread === 0 && saved.length > 0 && (
+                <span style={{ background:'#4da8ff', color:'#fff', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:600 }}>{saved.length}</span>
+              )}
             </button>
           ))}
           {!isPro && (
@@ -770,11 +924,12 @@ if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:
               <i className="ti ti-bolt" style={{ fontSize:13 }} /> Go Pro
             </button>
           )}
-         <button onClick={() => supabase.auth.signOut()} aria-label="Sign out" title="Sign out" style={{ marginLeft:4, padding:'6px 10px', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:6, fontSize:16, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center' }}>
-  <i className="ti ti-logout" />
-</button>
+          <button onClick={() => supabase.auth.signOut()} aria-label="Sign out" title="Sign out" style={{ marginLeft:4, padding:'6px 10px', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:6, fontSize:16, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center' }}>
+            <i className="ti ti-logout" />
+          </button>
         </div>
       </header>
+
       {tab==='analyzer' && (
         <div style={{ display:'flex', background:'var(--surface)', borderBottom:'1px solid var(--border)', overflowX:'auto', flexShrink:0 }}>
           <MetricCard label="Monthly cash flow (Yr 1)" value={fmt(metrics.cashflow)+'/mo'} sub="After all expenses + debt" valueStyle={{ color:metrics.cashflow>=0?'var(--green)':'var(--red)' }} />
@@ -789,6 +944,7 @@ if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:
           </div>
         </div>
       )}
+
       {tab==='analyzer' ? (
         <main id="main-content" style={{ display:'flex', flex:1, overflow: isMobile ? 'auto' : 'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
           <div style={{ width: isMobile ? '100%' : 280, minWidth: isMobile ? 'unset' : 280, background:'var(--surface)', borderRight: isMobile ? 'none' : '1px solid var(--border)', borderBottom: isMobile ? '1px solid var(--border)' : 'none', overflowY: isMobile ? 'visible' : 'auto', padding:16 }}>
@@ -972,27 +1128,9 @@ if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:
                       color: metrics.maxLoanForDscr > 0 ? 'var(--green)' : 'var(--text2)',
                       tip: 'Max loan amount where DSCR stays at 1.25x — useful for BRRRR or cash-out refi planning.'
                     },
-                    {
-                      label:'1% Rule',
-                      value: metrics.onePercentRule.toFixed(2) + '%',
-                      sub: metrics.onePercentPass ? 'Passes' : 'Does not pass',
-                      color: metrics.onePercentPass ? 'var(--green)' : 'var(--red)',
-                      tip: 'Monthly rent / purchase price. 1%+ is ideal.'
-                    },
-                    {
-                      label:'IRR (10yr)',
-                      value: isNaN(metrics.irr) || !isFinite(metrics.irr) ? 'N/A' : metrics.irr.toFixed(1) + '%',
-                      sub: metrics.irr >= 12 ? 'Strong' : metrics.irr >= 8 ? 'Good' : 'Below avg',
-                      color: metrics.irr >= 12 ? 'var(--green)' : metrics.irr >= 8 ? 'var(--amber)' : 'var(--red)',
-                      tip: 'Internal Rate of Return over 10 years including sale'
-                    },
-                    {
-                      label:'Equity Multiple',
-                      value: isNaN(metrics.equityMultiple) ? 'N/A' : metrics.equityMultiple.toFixed(2) + 'x',
-                      sub: metrics.equityMultiple >= 2 ? 'Strong' : metrics.equityMultiple >= 1.5 ? 'Good' : 'Low',
-                      color: metrics.equityMultiple >= 2 ? 'var(--green)' : metrics.equityMultiple >= 1.5 ? 'var(--amber)' : 'var(--red)',
-                      tip: 'Total return / cash invested over 10 years'
-                    },
+                    { label:'1% Rule', value: metrics.onePercentRule.toFixed(2) + '%', sub: metrics.onePercentPass ? 'Passes' : 'Does not pass', color: metrics.onePercentPass ? 'var(--green)' : 'var(--red)', tip: 'Monthly rent / purchase price. 1%+ is ideal.' },
+                    { label:'IRR (10yr)', value: isNaN(metrics.irr) || !isFinite(metrics.irr) ? 'N/A' : metrics.irr.toFixed(1) + '%', sub: metrics.irr >= 12 ? 'Strong' : metrics.irr >= 8 ? 'Good' : 'Below avg', color: metrics.irr >= 12 ? 'var(--green)' : metrics.irr >= 8 ? 'var(--amber)' : 'var(--red)', tip: 'Internal Rate of Return over 10 years including sale' },
+                    { label:'Equity Multiple', value: isNaN(metrics.equityMultiple) ? 'N/A' : metrics.equityMultiple.toFixed(2) + 'x', sub: metrics.equityMultiple >= 2 ? 'Strong' : metrics.equityMultiple >= 1.5 ? 'Good' : 'Low', color: metrics.equityMultiple >= 2 ? 'var(--green)' : metrics.equityMultiple >= 1.5 ? 'var(--amber)' : 'var(--red)', tip: 'Total return / cash invested over 10 years' },
                   ].filter(Boolean).map(m => (
                     <div key={m.label} title={m.tip} style={{ background:'var(--surface2)', borderRadius:8, padding:'12px 14px', cursor:'help' }}>
                       <div style={{ fontSize:11, color:'var(--text2)', marginBottom:2 }}>{m.label} <i className="ti ti-info-circle" style={{ fontSize:10, color:'var(--text3)' }} /></div>
@@ -1001,7 +1139,6 @@ if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:
                     </div>
                   ))}
                 </div>
-                {/* DSCR contextual insight for financed deals */}
                 {!metrics.isCashDeal && metrics.dscr !== null && (() => {
                   const color = metrics.dscr >= 1.25 ? 'var(--green)' : metrics.dscr >= 1.0 ? 'var(--amber)' : 'var(--red)'
                   const bg = metrics.dscr >= 1.25 ? '#eaf3de' : metrics.dscr >= 1.0 ? '#faeeda' : '#fcebeb'
@@ -1012,7 +1149,6 @@ if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:
                     : `Your DSCR of ${metrics.dscr.toFixed(2)}x is below lender threshold. You'd need rent of ${fmt(metrics.rentNeededForDscr)}/mo or a purchase price around ${fmt(metrics.priceNeededForDscr)} to qualify for a DSCR loan.`
                   return <div style={{ marginTop:14, padding:'10px 14px', background:bg, borderRadius:8, fontSize:12, color, lineHeight:1.5 }}><strong>DSCR insight:</strong> {text}</div>
                 })()}
-                {/* Cash deal refi insight */}
                 {metrics.isCashDeal && metrics.maxLoanForDscr > 0 && (
                   <div style={{ marginTop:14, padding:'10px 14px', background:'#eaf3de', borderRadius:8, fontSize:12, color:'#1a7a4a', lineHeight:1.5 }}>
                     <strong>Refi insight:</strong> Based on current NOI, you could refinance up to {fmtK(metrics.maxLoanForDscr)} and still maintain a 1.25x DSCR.{metrics.cashOutPotential > 0 ? ` That's approximately ${fmtK(metrics.cashOutPotential)} in potential cash-out above your current loan balance.` : ''}
@@ -1088,7 +1224,16 @@ if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:
           </div>
         </main>
       ) : (
-        <Portfolio saved={saved} onDelete={handleDelete} isPro={isPro} onUpgrade={() => openUpgrade('portfolio')} />
+        <Portfolio
+          saved={saved}
+          onDelete={handleDelete}
+          isPro={isPro}
+          onUpgrade={() => openUpgrade('portfolio')}
+          dealAlerts={dealAlerts}
+          viewedDealIds={viewedDealIds}
+          onLoadDeal={handleLoadDeal}
+          onMarkViewed={handleMarkViewed}
+        />
       )}
     </div>
   )
