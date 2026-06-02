@@ -844,8 +844,8 @@ export default function App() {
       // Load trial status
       const { data: profileData, error: profileError } = await supabase.from('profiles').select('trial_start').eq('id', user.id).single()
 
-      if (profileData?.trial_start) setTrialStart(profileData.trial_start)
-      }
+      setTrialStart(profileData?.trial_start ?? null)
+      
       setAuthLoading(false)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -900,8 +900,8 @@ export default function App() {
     const now = new Date().toISOString()
     await supabase.from('profiles').update({ trial_start: now }).eq('id', supaUser.id)
     setTrialStart(now)
-    setShowUpgrade(false)
     showToast('🎉 Your 7-day free trial has started!', 'success')
+setShowUpgrade(false)
   }
 
   // Save user buy box preferences
