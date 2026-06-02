@@ -10,7 +10,7 @@ if ('serviceWorker' in navigator) {
 const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 const fmtK = (n) => n >= 1000 ? `$${Math.round(n / 1000)}K` : fmt(n)
 const fmtPct = (n) => isNaN(n) ? '0.00%' : `${n.toFixed(2)}%`
-const FREE_LIMIT = 1
+const FREE_LIMIT = 2
 const PRO_PRICE = 7.99
 
 function calcMortgage(principal, annualRate, years) {
