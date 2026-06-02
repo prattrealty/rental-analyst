@@ -844,10 +844,9 @@ export default function App() {
       // Load trial status
       const { data: profileData, error: profileError } = await supabase.from('profiles').select('trial_start').eq('id', user.id).single()
 
-      setTrialStart(profileData?.trial_start ?? null)
-      
-      setAuthLoading(false)
-    })
+     setTrialStart(profileData?.trial_start ?? null)
+setAuthLoading(false)
+})
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSupaUser(session?.user ?? null)
     })
