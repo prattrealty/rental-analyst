@@ -410,7 +410,7 @@ function UpgradeModal({ onClose, trigger, onUpgrade, trialStart, onStartTrial })
           </div>
         </div>
       <div style={{ padding: '0 28px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {!trialStart && <button onClick={onStartTrial} style={{ width: '100%', padding: '13px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>🎉 Try Free for 7 Days</button>}
+          {!trialStart && <button onClick={() => { console.log('button clicked'); onStartTrial && onStartTrial(); }} style={{ width: '100%', padding: '13px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>🎉 Try Free for 7 Days</button>}
           <button onClick={handleStripeCheckout} style={{ width: '100%', padding: '13px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Start Pro — ${PRO_PRICE}/month</button>
           <button onClick={onClose} style={{ width: '100%', padding: '10px', background: 'none', color: 'var(--text2)', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)' }}>Continue with free plan</button>
           <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text3)' }}>No contracts · Cancel anytime · Secure checkout</div>
