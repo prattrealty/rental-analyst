@@ -168,7 +168,7 @@ function calcDealScore(metrics) {
     ? { label: 'Average Deal', color: '#854f0b', bg: '#faeeda', emoji: '🟡' }
     : { label: 'Below Market', color: '#a32d2d', bg: '#fcebeb', emoji: '🔴' }
 
-  return { score, breakdown, grade }
+  return { score: Math.min(score, 100), breakdown, grade }
 }
 
 function DealScoreCard({ metrics }) {
@@ -492,74 +492,207 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 // ── DEAL ALERTS COMPONENT ──────────────────────────────────────────────────
-function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed }) {
-  const unread = deals.filter(d => !viewedIds.has(d.id))
-  if (deals.length === 0) return (
-    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'var(--text2)', padding:40, textAlign:'center' }}>
-      <i className="ti ti-bell" style={{ fontSize:48, color:'var(--text3)' }} />
-      <div style={{ fontSize:16, fontWeight:500, color:'var(--text)' }}>No deal alerts yet</div>
-      <div style={{ fontSize:13, maxWidth:280 }}>When any property analyzed in the app scores 70 or above, it automatically appears here for all users.</div>
+function BuyBoxPanel({ prefs, onSave }) {
+  const [local, setLocal] = useState({ ...prefs })
+  const [saved, setSaved] = useState(false)
+  const set = (key, val) => setLocal(p => ({ ...p, [key]: val }))
+
+  const handleSave = () => {
+    onSave(local)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <i className="ti ti-settings" style={{ fontSize: 15, color: '#1a5fa8' }} /> My Buy Box
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>Only show deals that match your criteria</div>
+        </div>
+        <button onClick={handleSave} style={{ padding: '7px 16px', background: saved ? '#1a7a4a' : '#1a5fa8', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, transition: 'background 0.3s' }}>
+          <i className={`ti ${saved ? 'ti-check' : 'ti-device-floppy'}`} style={{ fontSize: 13 }} />
+          {saved ? 'Saved!' : 'Save'}
+        </button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <span>Min Deal Score</span>
+            <span style={{ color: '#1a5fa8', fontWeight: 700 }}>{local.min_score}</span>
+          </div>
+          <input type="range" min={0} max={100} step={5} value={local.min_score}
+            onChange={e => set('min_score', Number(e.target.value))}
+            style={{ width: '100%', accentColor: '#1a5fa8', cursor: 'pointer' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>
+            <span>0 (any)</span><span>50 (avg+)</span><span>75 (strong)</span>
+          </div>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Max Price</label>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'var(--text3)' }}>$</span>
+            <input type="number" value={local.max_price} onChange={e => set('max_price', Number(e.target.value))}
+              style={{ paddingLeft: 18, width: '100%' }} />
+          </div>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Min Cash Flow</label>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'var(--text3)' }}>$</span>
+            <input type="number" value={local.min_cashflow} onChange={e => set('min_cashflow', Number(e.target.value))}
+              style={{ paddingLeft: 18, width: '100%' }} />
+            <span style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--text3)' }}>/mo</span>
+          </div>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Min Cap Rate</label>
+          <div style={{ position: 'relative' }}>
+            <input type="number" value={local.min_cap_rate} onChange={e => set('min_cap_rate', Number(e.target.value))}
+              style={{ paddingRight: 28, width: '100%' }} />
+            <span style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--text3)' }}>%</span>
+          </div>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Min CoC Return</label>
+          <div style={{ position: 'relative' }}>
+            <input type="number" value={local.min_coc} onChange={e => set('min_coc', Number(e.target.value))}
+              style={{ paddingRight: 28, width: '100%' }} />
+            <span style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: 'var(--text3)' }}>%</span>
+          </div>
+        </div>
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Property Type</label>
+          <select value={local.property_type} onChange={e => set('property_type', e.target.value)}
+            style={{ width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, background: 'var(--surface)', color: 'var(--text)', fontFamily: 'var(--font)' }}>
+            <option value="any">Any</option>
+            <option value="sfr">Single Family (SFR)</option>
+            <option value="multi">Multi-Family</option>
+            <option value="condo">Condo / Townhome</option>
+            <option value="commercial">Commercial</option>
+          </select>
+        </div>
+      </div>
     </div>
   )
+}
+
+function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs }) {
+  const DEFAULT_PREFS = { min_score: 0, max_price: 999999999, min_cashflow: 0, min_cap_rate: 0, min_coc: 0, property_type: 'any' }
+  const activePref = prefs || DEFAULT_PREFS
+  const hasSetPrefs = prefs !== null
+
+  // Filter deals against user's buy box
+  const matchingDeals = deals.filter(deal => {
+    const d = deal.data || {}
+    const m = d.metrics || {}
+    const f = d.fields || {}
+    const scoreResult = calcDealScore(m)
+    const score = scoreResult?.score || deal.deal_score || 0
+    const price = f.price || 0
+    const cashflow = m.cashflow || 0
+    const capRate = m.capRate || 0
+    const coc = m.coc || 0
+
+    if (score < activePref.min_score) return false
+    if (price > activePref.max_price && activePref.max_price > 0) return false
+    if (cashflow < activePref.min_cashflow) return false
+    if (capRate < activePref.min_cap_rate) return false
+    if (coc < activePref.min_coc) return false
+    return true
+  })
+
   return (
-    <div style={{ flex:1, overflowY:'auto', padding:24 }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-        <div>
-          <div style={{ fontSize:17, fontWeight:700, color:'var(--text)' }}>🔥 Deal Alerts</div>
-          <div style={{ fontSize:12, color:'var(--text2)', marginTop:2 }}>Properties that scored 70+ — auto-flagged by the algorithm</div>
+    <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+      <BuyBoxPanel prefs={activePref} onSave={onSavePrefs} />
+
+      {!hasSetPrefs && (
+        <div style={{ background: '#f0f7ff', border: '1px solid #c0d8f0', borderRadius: 10, padding: '14px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <i className="ti ti-info-circle" style={{ fontSize: 18, color: '#1a5fa8', flexShrink: 0 }} />
+          <div style={{ fontSize: 13, color: '#0f2744' }}>Set your buy box above and hit <strong>Save</strong> to see matching deals.</div>
         </div>
-        {unread.length > 0 && (
-          <span style={{ background:'#a32d2d', color:'#fff', fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:10 }}>{unread.length} new</span>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)' }}>🔥 Matching Deals</div>
+          <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 2 }}>
+            {matchingDeals.length} of {deals.length} deals match your buy box
+          </div>
+        </div>
+        {matchingDeals.filter(d => !viewedIds.has(d.id)).length > 0 && (
+          <span style={{ background: '#a32d2d', color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 10 }}>
+            {matchingDeals.filter(d => !viewedIds.has(d.id)).length} new
+          </span>
         )}
       </div>
-      <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-        {deals.map(deal => {
+
+      {matchingDeals.length === 0 && deals.length > 0 && (
+        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text2)' }}>
+          <i className="ti ti-filter-off" style={{ fontSize: 40, color: 'var(--text3)', marginBottom: 12, display: 'block' }} />
+          <div style={{ fontSize: 15, fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>No deals match your criteria</div>
+          <div style={{ fontSize: 13 }}>Try loosening your buy box — lower the min score or raise the max price.</div>
+        </div>
+      )}
+
+      {matchingDeals.length === 0 && deals.length === 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text2)', padding: 40, textAlign: 'center' }}>
+          <i className="ti ti-bell" style={{ fontSize: 48, color: 'var(--text3)' }} />
+          <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>No deal alerts yet</div>
+          <div style={{ fontSize: 13, maxWidth: 280 }}>When any property analyzed in the app scores 70 or above, it automatically appears here for all users.</div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {matchingDeals.map(deal => {
           const isNew = !viewedIds.has(deal.id)
           const d = deal.data || {}
           const m = d.metrics || {}
           const f = d.fields || {}
           const scoreResult = calcDealScore(m)
           const score = scoreResult?.score || deal.deal_score
-          const grade = scoreResult?.grade || { color:'#1a7a4a', emoji:'🟢', label:'Strong Deal' }
+          const grade = scoreResult?.grade || { color: '#1a7a4a', emoji: '🟢', label: 'Strong Deal' }
           return (
-            <div key={deal.id} style={{ background:'var(--surface)', border: isNew ? '2px solid ' + grade.color : '1px solid var(--border)', borderRadius:12, padding:16, position:'relative', cursor:'pointer', transition:'box-shadow 0.2s' }}
+            <div key={deal.id} style={{ background: 'var(--surface)', border: isNew ? '2px solid ' + grade.color : '1px solid var(--border)', borderRadius: 12, padding: 16, position: 'relative', cursor: 'pointer', transition: 'box-shadow 0.2s' }}
               onClick={() => { onLoadDeal(d); onMarkViewed(deal.id) }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow='none'}>
+              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)'}
+              onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
               {isNew && (
-                <div style={{ position:'absolute', top:12, right:12, background:grade.color, color:'#fff', fontSize:9, fontWeight:700, padding:'2px 8px', borderRadius:10, letterSpacing:'0.5px' }}>NEW</div>
+                <div style={{ position: 'absolute', top: 12, right: 12, background: grade.color, color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 10, letterSpacing: '0.5px' }}>NEW</div>
               )}
-              <div style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:12 }}>
-                <div style={{ width:52, height:52, borderRadius:10, background:grade.color + '22', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <div style={{ fontSize:18, fontWeight:700, color:grade.color, lineHeight:1 }}>{score}</div>
-                  <div style={{ fontSize:9, color:grade.color, fontWeight:600 }}>SCORE</div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 12 }}>
+                <div style={{ width: 52, height: 52, borderRadius: 10, background: grade.color + '22', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: grade.color, lineHeight: 1 }}>{score}</div>
+                  <div style={{ fontSize: 9, color: grade.color, fontWeight: 600 }}>SCORE</div>
                 </div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontWeight:600, fontSize:15, color:'var(--text)', marginBottom:2 }}>{deal.address || f.address || 'Featured Deal'}</div>
-                  <div style={{ fontSize:12, color:'var(--text2)' }}>{grade.emoji} {grade.label} · {new Date(deal.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric' })}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--text)', marginBottom: 2 }}>{deal.address || f.address || 'Featured Deal'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text2)' }}>{grade.emoji} {grade.label} · {new Date(deal.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
                 </div>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 12 }}>
                 {[
-                  { label:'Cash flow', value: m.cashflow !== undefined ? fmt(m.cashflow)+'/mo' : '—', pos: m.cashflow >= 0 },
-                  { label:'Cap rate', value: m.capRate !== undefined ? fmtPct(m.capRate) : '—' },
-                  { label:'CoC return', value: m.coc !== undefined ? fmtPct(m.coc) : '—', pos: m.coc >= 0 },
-                  { label:'Price', value: f.price ? fmtK(f.price) : '—' },
+                  { label: 'Cash flow', value: m.cashflow !== undefined ? fmt(m.cashflow) + '/mo' : '—', pos: m.cashflow >= 0 },
+                  { label: 'Cap rate', value: m.capRate !== undefined ? fmtPct(m.capRate) : '—' },
+                  { label: 'CoC return', value: m.coc !== undefined ? fmtPct(m.coc) : '—', pos: m.coc >= 0 },
+                  { label: 'Price', value: f.price ? fmtK(f.price) : '—' },
                 ].map(stat => (
-                  <div key={stat.label} style={{ background:'var(--surface2)', borderRadius:6, padding:'8px 10px' }}>
-                    <div style={{ fontSize:10, color:'var(--text3)', marginBottom:2 }}>{stat.label}</div>
-                    <div style={{ fontSize:13, fontWeight:600, color: stat.pos === false ? 'var(--red)' : stat.pos ? 'var(--green)' : 'var(--text)' }}>{stat.value}</div>
+                  <div key={stat.label} style={{ background: 'var(--surface2)', borderRadius: 6, padding: '8px 10px' }}>
+                    <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 2 }}>{stat.label}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: stat.pos === false ? 'var(--red)' : stat.pos ? 'var(--green)' : 'var(--text)' }}>{stat.value}</div>
                   </div>
                 ))}
               </div>
-              <button style={{ width:'100%', padding:'8px', background:grade.color, color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
-                <i className="ti ti-calculator" style={{ fontSize:13 }} /> Load Full Analysis
+              <button style={{ width: '100%', padding: '8px', background: grade.color, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <i className="ti ti-calculator" style={{ fontSize: 13 }} /> Load Full Analysis
               </button>
             </div>
           )
         })}
       </div>
-      <div style={{ marginTop:20, padding:'12px 16px', background:'var(--surface2)', borderRadius:8, fontSize:11, color:'var(--text3)', textAlign:'center', lineHeight:1.5 }}>
+      <div style={{ marginTop: 20, padding: '12px 16px', background: 'var(--surface2)', borderRadius: 8, fontSize: 11, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.5 }}>
         Deals auto-flag when Deal Score hits 70+. One alert per property, ever. · <em>Not financial advice — always do your own due diligence.</em>
       </div>
     </div>
@@ -567,7 +700,7 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed }) {
 }
 
 // ── PORTFOLIO COMPONENT ────────────────────────────────────────────────────
-function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealIds, onLoadDeal, onMarkViewed }) {
+function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs }) {
   const [portfolioTab, setPortfolioTab] = useState('properties')
   const unreadCount = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
   const totalCF = saved.reduce((s,p) => s + p.metrics.cashflow, 0)
@@ -595,7 +728,7 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
       </div>
 
       {portfolioTab === 'alerts' ? (
-        <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} />
+        <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} prefs={prefs} onSavePrefs={onSavePrefs} />
       ) : (
         <div style={{ flex:1, overflowY:'auto', padding:24 }}>
           {saved.length === 0 && !isPro ? (
@@ -688,6 +821,7 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true)
   const [dealAlerts, setDealAlerts] = useState([])
   const [viewedDealIds, setViewedDealIds] = useState(new Set())
+  const [userPrefs, setUserPrefs] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -703,6 +837,9 @@ export default function App() {
         // Load which deals this user has viewed
         const { data: viewData } = await supabase.from('deal_alert_views').select('deal_id').eq('user_id', user.id)
         if (viewData) setViewedDealIds(new Set(viewData.map(v => v.deal_id)))
+        // Load user preferences / buy box (maybeSingle avoids 406 when no row exists yet)
+        const { data: prefsData } = await supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle()
+        if (prefsData) setUserPrefs(prefsData)
       }
       setAuthLoading(false)
     })
@@ -750,6 +887,13 @@ export default function App() {
   }
 
   const openUpgrade = (trigger='general') => { setUpgradeTrigger(trigger); setShowUpgrade(true) }
+
+  // Save user buy box preferences
+  const handleSavePrefs = async (newPrefs) => {
+    const record = { ...newPrefs, user_id: supaUser.id, updated_at: new Date().toISOString() }
+    const { data } = await supabase.from('user_preferences').upsert(record, { onConflict: 'user_id' }).select().single()
+    if (data) setUserPrefs(data)
+  }
 
   // Mark a deal as viewed by this user
   const handleMarkViewed = async (dealId) => {
@@ -1233,6 +1377,8 @@ export default function App() {
           viewedDealIds={viewedDealIds}
           onLoadDeal={handleLoadDeal}
           onMarkViewed={handleMarkViewed}
+          prefs={userPrefs}
+          onSavePrefs={handleSavePrefs}
         />
       )}
     </div>
