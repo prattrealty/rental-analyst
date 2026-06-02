@@ -355,7 +355,7 @@ function SignupModal({ onClose, form, setForm, onSubmit, error }) {
   )
 }
 
-function UpgradeModal({ onClose, trigger, onUpgrade }) {
+function UpgradeModal({ onClose, trigger, onUpgrade, trialStart, onStartTrial }) {
   const features = [
     { icon: 'ti-building-store', label: 'Unlimited property saves', free: '2 properties', pro: 'Unlimited' },
     { icon: 'ti-chart-bar', label: 'Full portfolio dashboard', free: false, pro: true },
@@ -409,7 +409,8 @@ function UpgradeModal({ onClose, trigger, onUpgrade }) {
             ))}
           </div>
         </div>
-        <div style={{ padding: '0 28px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ padding: '0 28px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {!trialStart && <button onClick={onStartTrial} style={{ width: '100%', padding: '13px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>🎉 Try Free for 7 Days</button>}
           <button onClick={handleStripeCheckout} style={{ width: '100%', padding: '13px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Start Pro — ${PRO_PRICE}/month</button>
           <button onClick={onClose} style={{ width: '100%', padding: '10px', background: 'none', color: 'var(--text2)', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)' }}>Continue with free plan</button>
           <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text3)' }}>No contracts · Cancel anytime · Secure checkout</div>
@@ -840,6 +841,10 @@ export default function App() {
         // Load user preferences / buy box (maybeSingle avoids 406 when no row exists yet)
         const { data: prefsData } = await supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle()
         if (prefsData) setUserPrefs(prefsData)
+      // Load trial status
+      const { data: profileData, error: profileError } = await supabase.from('profiles').select('trial_start').eq('id', user.id).single()
+
+      if (profileData?.trial_start) setTrialStart(profileData.trial_start)
       }
       setAuthLoading(false)
     })
@@ -863,6 +868,8 @@ export default function App() {
   const [signupForm, setSignupForm] = useState({ firstName:'', email:'', password:'', agreed:false })
   const [signupError, setSignupError] = useState('')
   const [isPro, setIsPro] = useState(() => localStorage.getItem('ra_pro') === 'true')
+  const [trialStart, setTrialStart] = useState(null)
+  const trialActive = trialStart && (new Date() - new Date(trialStart)) < 7 * 24 * 60 * 60 * 1000
   const [saved, setSaved] = useState([])
   const [comps, setComps] = useState([])
   const [compsLoading, setCompsLoading] = useState(false)
@@ -886,7 +893,16 @@ export default function App() {
     toastTimer.current = setTimeout(() => setToast(null), 5000)
   }
 
-  const openUpgrade = (trigger='general') => { setUpgradeTrigger(trigger); setShowUpgrade(true) }
+ const openUpgrade = (trigger='general') => { setUpgradeTrigger(trigger); setShowUpgrade(true) }
+
+  const startTrial = async () => {
+    console.log('startTrial called, supaUser:', supaUser)
+    const now = new Date().toISOString()
+    await supabase.from('profiles').update({ trial_start: now }).eq('id', supaUser.id)
+    setTrialStart(now)
+    setShowUpgrade(false)
+    showToast('🎉 Your 7-day free trial has started!', 'success')
+  }
 
   // Save user buy box preferences
   const handleSavePrefs = async (newPrefs) => {
@@ -914,7 +930,8 @@ export default function App() {
 
   const handleSave = async () => {
     if (!supaUser) return
-    if (!isPro && saved.length >= FREE_LIMIT) { openUpgrade('save'); return }
+    
+    if (!isPro && !trialActive && saved.length >= FREE_LIMIT) { openUpgrade('save'); return }
     const entry = { id: Date.now(), fields: { ...fields }, metrics }
     const { error } = await supabase.from('properties').insert({
       user_id: supaUser.id,
@@ -1032,7 +1049,7 @@ export default function App() {
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
       <a href="#main-content" className="skip-nav">Skip to main content</a>
       {showWalkthrough && <WalkthroughBubble onDone={() => { setShowWalkthrough(false); localStorage.setItem('ra_toured', '1') }} />}
-      {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={handleUpgrade} />}
+      {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={handleUpgrade} trialStart={trialStart} onStartTrial={startTrial} />}
       {showSignup && <SignupModal onClose={() => setShowSignup(false)} form={signupForm} setForm={setSignupForm} error={signupError} onSubmit={() => {
         if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
         if (!signupForm.email.includes('@')) { setSignupError('Please enter a valid email.'); return }
@@ -1120,7 +1137,7 @@ export default function App() {
                 <i className="ti ti-bookmark" /> Save property
                 {!isPro && <span style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)' }}>{saved.length}/{FREE_LIMIT}</span>}
               </button>
-              {!isPro && saved.length >= FREE_LIMIT && (
+              {!isPro && !trialActive && saved.length >= FREE_LIMIT && (
                 <div style={{ fontSize:11, color:'#a32d2d', marginTop:4, textAlign:'center' }}>
                   Free limit reached — <button onClick={() => openUpgrade('save')} style={{ background:'none', border:'none', color:'#1a5fa8', fontSize:11, cursor:'pointer', padding:0, fontFamily:'var(--font)', textDecoration:'underline' }}>upgrade to save more</button>
                 </div>
