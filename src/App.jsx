@@ -900,7 +900,7 @@ export default function App() {
     await supabase.from('profiles').update({ trial_start: now }).eq('id', supaUser.id)
     setTrialStart(now)
     showToast('🎉 Your 7-day free trial has started!', 'success')
-setShowUpgrade(false)
+    setShowUpgrade(false)
   }
 
   // Save user buy box preferences
