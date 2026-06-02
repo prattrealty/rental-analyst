@@ -1,0 +1,70 @@
+{
+  "name": "Rental Analyst",
+  "short_name": "Rental Analyst",
+  "id": "/",
+  "description": "Rental property analyzer for real estate investors",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f2744",
+  "theme_color": "#0f2744",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "categories": ["finance", "business", "utilities"],
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
+  "screenshots": [
+    {
+      "src": "/screenshot1.png",
+      "sizes": "1568x708",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Rental Analyst Dashboard"
+    },
+    {
+      "src": "/screenshot2.png",
+      "sizes": "349x753",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Deal Score"
+    },
+    {
+      "src": "/screenshot3.png",
+      "sizes": "347x756",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Property Analysis"
+    },
+    {
+      "src": "/screenshot4.png",
+      "sizes": "345x753",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Zillow Import"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Analyze Property",
+      "short_name": "Analyze",
+      "description": "Start a new property analysis",
+      "url": "/",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

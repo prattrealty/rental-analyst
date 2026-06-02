@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>You're Pro! — Rental Analyst</title>
+  <style>
+    body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f0f7ff; }
+    .card { background: white; border-radius: 16px; padding: 48px 40px; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.08); max-width: 400px; }
+    h1 { color: #1a5fa8; margin-bottom: 8px; }
+    p { color: #555; margin-bottom: 24px; }
+    a { display: inline-block; background: #1a5fa8; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div style="font-size:48px">🎉</div>
+    <h1>You're Pro!</h1>
+    <p>Your account has been upgraded. Enjoy unlimited saves, Zillow import, and PDF export.</p>
+    <a href="/">Go to Rental Analyst</a>
+  </div>
+  <script>
+    localStorage.setItem('isPro', 'true');
+    localStorage.setItem('proUnlockedAt', new Date().toISOString());
+  </script>
+</body>
+</html>
