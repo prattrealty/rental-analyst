@@ -842,11 +842,11 @@ export default function App() {
         const { data: prefsData } = await supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle()
         if (prefsData) setUserPrefs(prefsData)
       // Load trial status
-      const { data: profileData, error: profileError } = await supabase.from('profiles').select('trial_start').eq('id', user.id).single()
-
-     setTrialStart(profileData?.trial_start ?? null)
-setAuthLoading(false)
-})
+        const { data: profileData } = await supabase.from('profiles').select('trial_start').eq('id', user.id).single()
+        setTrialStart(profileData?.trial_start ?? null)
+      }
+      setAuthLoading(false)
+    })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSupaUser(session?.user ?? null)
     })
