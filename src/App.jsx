@@ -823,6 +823,9 @@ export default function App() {
   const [dealAlerts, setDealAlerts] = useState([])
   const [viewedDealIds, setViewedDealIds] = useState(new Set())
   const [userPrefs, setUserPrefs] = useState(null)
+  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(false)
+  const [alertFrequency, setAlertFrequency] = useState('daily')
+  const [nudgeDismissed, setNudgeDismissed] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -835,12 +838,15 @@ export default function App() {
         // Load deal alerts
         const { data: alertData } = await supabase.from('deal_alerts').select('*').order('created_at', { ascending: false })
         if (alertData) setDealAlerts(alertData)
-        // Load which deals this user has viewed
         const { data: viewData } = await supabase.from('deal_alert_views').select('deal_id').eq('user_id', user.id)
         if (viewData) setViewedDealIds(new Set(viewData.map(v => v.deal_id)))
         // Load user preferences / buy box (maybeSingle avoids 406 when no row exists yet)
         const { data: prefsData } = await supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle()
-        if (prefsData) setUserPrefs(prefsData)
+        if (prefsData) {
+        setUserPrefs(prefsData)
+        setEmailAlertsEnabled(prefsData.email_alerts_enabled ?? false)
+        setAlertFrequency(prefsData.alert_frequency ?? 'daily')
+}
       // Load trial status
         const { data: profileData } = await supabase.from('profiles').select('trial_start').eq('id', user.id).single()
         setTrialStart(profileData?.trial_start ?? null)
@@ -904,11 +910,11 @@ export default function App() {
   }
 
   // Save user buy box preferences
-  const handleSavePrefs = async (newPrefs) => {
-    const record = { ...newPrefs, user_id: supaUser.id, updated_at: new Date().toISOString() }
-    const { data } = await supabase.from('user_preferences').upsert(record, { onConflict: 'user_id' }).select().single()
-    if (data) setUserPrefs(data)
-  }
+const handleSavePrefs = async (newPrefs) => {
+  const record = { ...newPrefs, user_id: supaUser.id, updated_at: new Date().toISOString(), email_alerts_enabled: emailAlertsEnabled, alert_frequency: alertFrequency }
+  const { data } = await supabase.from('user_preferences').upsert(record, { onConflict: 'user_id' }).select().single()
+  if (data) setUserPrefs(data)
+}
 
   // Mark a deal as viewed by this user
   const handleMarkViewed = async (dealId) => {
