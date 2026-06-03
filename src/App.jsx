@@ -493,7 +493,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 // ── DEAL ALERTS COMPONENT ──────────────────────────────────────────────────
-function BuyBoxPanel({ prefs, onSave }) {
+function BuyBoxPanel({ prefs, onSave, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency }) {
   const [local, setLocal] = useState({ ...prefs })
   const [saved, setSaved] = useState(false)
   const set = (key, val) => setLocal(p => ({ ...p, [key]: val }))
@@ -576,11 +576,64 @@ function BuyBoxPanel({ prefs, onSave }) {
           </select>
         </div>
       </div>
+      {/* ── EMAIL ALERTS TOGGLE ─────────────────────────── */}
+<div style={{ borderTop: '1px solid var(--border)', marginTop: 16, paddingTop: 16 }}>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+    <div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <i className="ti ti-mail" style={{ fontSize: 14, color: '#1a5fa8' }} />
+        Email Alerts
+      </div>
+      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+        Get notified when new deals match your buy box
+      </div>
+    </div>
+    {/* Toggle switch */}
+    <div
+      onClick={() => setEmailAlertsEnabled(v => !v)}
+      style={{
+        width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
+        background: emailAlertsEnabled ? '#1a5fa8' : 'var(--border)',
+        position: 'relative', transition: 'background 0.2s', flexShrink: 0
+      }}
+    >
+      <div style={{
+        position: 'absolute', top: 3,
+        left: emailAlertsEnabled ? 23 : 3,
+        width: 18, height: 18, borderRadius: '50%',
+        background: '#fff', transition: 'left 0.2s',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+      }} />
+    </div>
+  </div>
+
+  {/* Frequency selector — only shown when alerts are on */}
+  {emailAlertsEnabled && (
+    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+      {['instant', 'daily', 'weekly'].map(f => (
+        <button
+          key={f}
+          onClick={() => setAlertFrequency(f)}
+          style={{
+            flex: 1, padding: '5px 0', borderRadius: 6, fontSize: 11,
+            fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)',
+            border: `1px solid ${alertFrequency === f ? '#1a5fa8' : 'var(--border)'}`,
+            background: alertFrequency === f ? '#1a5fa8' : 'transparent',
+            color: alertFrequency === f ? '#fff' : 'var(--text2)',
+            textTransform: 'capitalize'
+          }}
+        >
+          {f}
+        </button>
+      ))}
+    </div>
+  )}
+</div>
     </div>
   )
 }
 
-function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs }) {
+function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency }) {
   const DEFAULT_PREFS = { min_score: 0, max_price: 999999999, min_cashflow: 0, min_cap_rate: 0, min_coc: 0, property_type: 'any' }
   const activePref = prefs || DEFAULT_PREFS
   const hasSetPrefs = prefs !== null
@@ -607,7 +660,7 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-      <BuyBoxPanel prefs={activePref} onSave={onSavePrefs} />
+     <BuyBoxPanel prefs={activePref} onSave={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} /> 
 
       {!hasSetPrefs && (
         <div style={{ background: '#f0f7ff', border: '1px solid #c0d8f0', borderRadius: 10, padding: '14px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -701,7 +754,7 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
 }
 
 // ── PORTFOLIO COMPONENT ────────────────────────────────────────────────────
-function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs }) {
+function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency }) {
   const [portfolioTab, setPortfolioTab] = useState('properties')
   const unreadCount = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
   const totalCF = saved.reduce((s,p) => s + p.metrics.cashflow, 0)
@@ -729,7 +782,7 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
       </div>
 
       {portfolioTab === 'alerts' ? (
-        <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} prefs={prefs} onSavePrefs={onSavePrefs} />
+        <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} prefs={prefs} onSavePrefs={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} />
       ) : (
         <div style={{ flex:1, overflowY:'auto', padding:24 }}>
           {saved.length === 0 && !isPro ? (
@@ -1095,6 +1148,39 @@ const handleSavePrefs = async (newPrefs) => {
           </button>
         </div>
       </header>
+      {/* ── EMAIL ALERT NUDGE BANNER ──────────────────────── */}
+{supaUser && !emailAlertsEnabled && !nudgeDismissed && (
+  <div style={{
+    background: 'linear-gradient(135deg, #1a3a5c, #1a5fa8)',
+    color: '#fff',
+    padding: '10px 20px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: 13,
+    flexShrink: 0
+  }}>
+    <span>
+      <i className="ti ti-bell" style={{ marginRight: 6 }} />
+      🔔 Get email alerts when deals match your criteria —{' '}
+      <strong>turn on in your Buy Box settings below</strong>
+    </span>
+    <button
+      onClick={() => {
+        setNudgeDismissed(true)
+        supabase.from('profiles')
+          .update({ dashboard_nudge_dismissed: true })
+          .eq('id', supaUser.id)
+      }}
+      style={{
+        background: 'none', border: 'none', color: '#fff',
+        cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: '0 4px'
+      }}
+    >
+      ×
+    </button>
+  </div>
+)}
 
       {tab==='analyzer' && (
         <div style={{ display:'flex', background:'var(--surface)', borderBottom:'1px solid var(--border)', overflowX:'auto', flexShrink:0 }}>
@@ -1401,6 +1487,10 @@ const handleSavePrefs = async (newPrefs) => {
           onMarkViewed={handleMarkViewed}
           prefs={userPrefs}
           onSavePrefs={handleSavePrefs}
+          emailAlertsEnabled={emailAlertsEnabled}
+          setEmailAlertsEnabled={setEmailAlertsEnabled}
+          alertFrequency={alertFrequency}
+          setAlertFrequency={setAlertFrequency} 
         />
       )}
     </div>
