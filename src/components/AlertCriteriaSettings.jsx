@@ -1,6 +1,5 @@
 // AlertCriteriaSettings.jsx  (or paste inside App.jsx)
 import { supabase } from '../supabaseClient';
-import { supabase } from './supabaseClient';
 
 const MARKETS = [
   'Atlanta, GA', 'Chattanooga, TN', 'Knoxville, TN',
