@@ -1241,6 +1241,31 @@ const handleSavePrefs = async (newPrefs) => {
               <Field label="Neighborhood" id="neighborhood" value={fields.neighborhood} onChange={set('neighborhood')} type="text" />
             </FieldRow>
             <Divider />
+           <div style={{padding: '4px 0 8px'}}>
+  <button
+    onClick={() => {
+      if (fields.address && fields.zip) {
+        runImport(`${fields.address} ${fields.zip}`)
+      } else {
+        showToast('Please enter an address and zip code first')
+      }
+    }}
+    style={{
+      width: '100%',
+      padding: '10px',
+      marginTop: '8px',
+      background: '#0f2744',
+      color: 'white',
+      border: 'none',
+      borderRadius: '6px',
+      fontSize: '14px',
+      fontWeight: '600',
+      cursor: 'pointer'
+    }}
+  >
+    🔍 Analyze This Property
+  </button>
+</div>
             <SectionLabel icon="home">Purchase</SectionLabel>
             <Field label="Purchase price" id="price" value={fields.price} onChange={set('price')} prefix="$" />
             <FieldRow>
