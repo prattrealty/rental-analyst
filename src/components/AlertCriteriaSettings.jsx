@@ -1,4 +1,4 @@
-// AlertCriteriaSettings.jsx  (or paste inside App.jsx)
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
 const MARKETS = [
