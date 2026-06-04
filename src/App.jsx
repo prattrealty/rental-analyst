@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
+import AlertCriteriaSettings from './components/AlertCriteriaSettings';
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js');
@@ -633,7 +634,7 @@ function BuyBoxPanel({ prefs, onSave, emailAlertsEnabled, setEmailAlertsEnabled,
   )
 }
 
-function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency }) {
+function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency, user }) {
   const DEFAULT_PREFS = { min_score: 0, max_price: 999999999, min_cashflow: 0, min_cap_rate: 0, min_coc: 0, property_type: 'any' }
   const activePref = prefs || DEFAULT_PREFS
   const hasSetPrefs = prefs !== null
@@ -661,7 +662,7 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
      <BuyBoxPanel prefs={activePref} onSave={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} /> 
-
+     <AlertCriteriaSettings user={user} />
       {!hasSetPrefs && (
         <div style={{ background: '#f0f7ff', border: '1px solid #c0d8f0', borderRadius: 10, padding: '14px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="ti ti-info-circle" style={{ fontSize: 18, color: '#1a5fa8', flexShrink: 0 }} />
@@ -782,7 +783,7 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
       </div>
 
       {portfolioTab === 'alerts' ? (
-        <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} prefs={prefs} onSavePrefs={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} />
+       <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} user={supaUser} 
       ) : (
         <div style={{ flex:1, overflowY:'auto', padding:24 }}>
           {saved.length === 0 && !isPro ? (
