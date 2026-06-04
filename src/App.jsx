@@ -783,7 +783,7 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
       </div>
 
       {portfolioTab === 'alerts' ? (
-       <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} user={supaUser} 
+        <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} prefs={prefs} onSavePrefs={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} user={supaUser} />
       ) : (
         <div style={{ flex:1, overflowY:'auto', padding:24 }}>
           {saved.length === 0 && !isPro ? (
