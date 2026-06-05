@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { jsPDF } from 'jspdf'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
@@ -1189,7 +1190,7 @@ const handleSavePrefs = async (newPrefs) => {
   if (!supaUser) return <Auth />
 
   const generatePDF = () => {
-  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
   const doc = new jsPDF()
   const score = calcDealScore(metrics)
 
