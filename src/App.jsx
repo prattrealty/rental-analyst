@@ -1149,6 +1149,8 @@ const handleSavePrefs = async (newPrefs) => {
       if (prop.propertyTaxes) {
         importedFields.taxesYearly = Math.round(parseFloat(prop.propertyTaxes) || 0)
         importedFields.taxes = Math.round((parseFloat(prop.propertyTaxes) || 0) / 12)
+      } else {
+        importedFields._taxMissing = true
       }
       setFields(f => ({ ...f, ...importedFields }))
       const gotData = importedFields.rent || importedFields.price || importedFields.taxes
@@ -1156,7 +1158,9 @@ const handleSavePrefs = async (newPrefs) => {
         setImportAddress(address); setShowAddressFallback(true)
         showToast('Could not match that address. Edit it below and retry.', 'error')
       } else {
-        showToast('Imported: ' + [importedFields.address && 'Address', importedFields.rent && 'Rent estimate', importedFields.price && 'Price', importedFields.taxes && 'Taxes'].filter(Boolean).join(', '))
+        showToast('Imported: ' + [
+  
+].filter(Boolean).join(', '))
       }
     } catch (err) {
       setImportAddress(address); setShowAddressFallback(true)
