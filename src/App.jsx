@@ -1191,7 +1191,6 @@ const handleSavePrefs = async (newPrefs) => {
 
   const generatePDF = () => {
   const doc = new jsPDF()
-  const doc = new jsPDF()
   const score = calcDealScore(metrics)
 
   // Header
