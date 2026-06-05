@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
-import AlertCriteriaSettings from './components/AlertCriteriaSettings';
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js');
@@ -494,16 +493,43 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 // ── DEAL ALERTS COMPONENT ──────────────────────────────────────────────────
-function BuyBoxPanel({ prefs, onSave, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency }) {
-  const [local, setLocal] = useState({ ...prefs })
-  const [saved, setSaved] = useState(false)
-  const set = (key, val) => setLocal(p => ({ ...p, [key]: val }))
+function BuyBoxPanel({ prefs, onSave, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency, user }) {
+ const [local, setLocal] = useState({ ...prefs })
+const [saved, setSaved] = useState(false)
+const [markets, setMarkets] = useState([])
+const [cityInput, setCityInput] = useState('')
+const set = (key, val) => setLocal(p => ({ ...p, [key]: val }))
 
-  const handleSave = () => {
-    onSave(local)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+const PRESET_MARKETS = [
+  'Atlanta, GA', 'Chattanooga, TN', 'Knoxville, TN',
+  'Asheville, NC', 'Nashville, TN', 'Birmingham, AL'
+]
+
+const toggleMarket = (m) => setMarkets(prev =>
+  prev.includes(m) ? prev.filter(v => v !== m) : [...prev, m]
+)
+
+const addCity = () => {
+  const city = cityInput.trim()
+  if (city && !markets.includes(city)) setMarkets(prev => [...prev, city])
+  setCityInput('')
+}
+
+const handleSave = async () => {
+  onSave(local)
+  if (user) {
+    await supabase.from('user_alert_criteria').upsert({
+      user_id: user.id,
+      markets,
+      min_coc: local.min_coc ?? 8,
+      max_price: local.max_price ?? 300000,
+      property_types: local.property_type ? [local.property_type] : ['Single Family'],
+      email_alerts: emailAlertsEnabled
+    }, { onConflict: 'user_id' })
   }
+  setSaved(true)
+  setTimeout(() => setSaved(false), 2000)
+}
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
@@ -519,6 +545,42 @@ function BuyBoxPanel({ prefs, onSave, emailAlertsEnabled, setEmailAlertsEnabled,
           {saved ? 'Saved!' : 'Save'}
         </button>
       </div>
+      {/* MARKETS TO WATCH */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', display: 'block', marginBottom: 8 }}>MARKETS TO WATCH</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+              {PRESET_MARKETS.map(m => (
+                <button key={m} onClick={() => toggleMarket(m)} style={{
+                  padding: '3px 10px', borderRadius: 20, border: '1.5px solid',
+                  borderColor: markets.includes(m) ? '#1a5fa8' : 'var(--border)',
+                  background: markets.includes(m) ? '#e8f0fb' : 'transparent',
+                  color: markets.includes(m) ? '#1a5fa8' : 'var(--text2)',
+                  cursor: 'pointer', fontSize: 12, fontWeight: 500
+                }}>{m}</button>
+              ))}
+              {markets.filter(m => !PRESET_MARKETS.includes(m)).map(m => (
+                <button key={m} onClick={() => toggleMarket(m)} style={{
+                  padding: '3px 10px', borderRadius: 20, border: '1.5px solid',
+                  borderColor: '#1a5fa8', background: '#e8f0fb',
+                  color: '#1a5fa8', cursor: 'pointer', fontSize: 12, fontWeight: 500
+                }}>{m} ×</button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input
+                type="text"
+                placeholder="Add a city (e.g. Pensacola, FL)"
+                value={cityInput}
+                onChange={e => setCityInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addCity()}
+                style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }}
+              />
+              <button onClick={addCity} style={{
+                padding: '6px 12px', borderRadius: 6, border: 'none',
+                background: '#1a5fa8', color: 'white', fontSize: 12, cursor: 'pointer'
+              }}>+ Add</button>
+            </div>
+          </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -661,8 +723,7 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-     <BuyBoxPanel prefs={activePref} onSave={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} /> 
-     <AlertCriteriaSettings user={user} />
+     <BuyBoxPanel prefs={activePref} onSave={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} user={user} /> 
       {!hasSetPrefs && (
         <div style={{ background: '#f0f7ff', border: '1px solid #c0d8f0', borderRadius: 10, padding: '14px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="ti ti-info-circle" style={{ fontSize: 18, color: '#1a5fa8', flexShrink: 0 }} />
