@@ -1146,7 +1146,7 @@ const handleSavePrefs = async (newPrefs) => {
       if (rentData.rent) importedFields.rent = parseFloat(rentData.rent) || 0
       if (rentData.rentRangeLow) importedFields.rentRangeLow = parseFloat(rentData.rentRangeLow) || 0
       if (rentData.rentRangeHigh) importedFields.rentRangeHigh = parseFloat(rentData.rentRangeHigh) || 0
-      if (prop.propertyTaxes) {
+      if (prop.propertyTaxes && prop.propertyTaxes > 0) {
         importedFields.taxesYearly = Math.round(parseFloat(prop.propertyTaxes) || 0)
         importedFields.taxes = Math.round((parseFloat(prop.propertyTaxes) || 0) / 12)
       } else {
