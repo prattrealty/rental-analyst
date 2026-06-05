@@ -499,6 +499,21 @@ const [saved, setSaved] = useState(false)
 const [markets, setMarkets] = useState([])
 const [cityInput, setCityInput] = useState('')
 const set = (key, val) => setLocal(p => ({ ...p, [key]: val }))
+// Add this right after your existing useState declarations in BuyBoxPanel
+useEffect(() => {
+  if (!user) return
+  const loadMarkets = async () => {
+    const { data } = await supabase
+      .from('user_alert_criteria')
+      .select('markets')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (data?.markets && Array.isArray(data.markets)) {
+      setMarkets(data.markets)
+    }
+  }
+  loadMarkets()
+}, [user])
 
 const PRESET_MARKETS = [
   'Atlanta, GA', 'Chattanooga, TN', 'Knoxville, TN',
