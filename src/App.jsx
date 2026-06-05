@@ -1644,7 +1644,7 @@ const handleSavePrefs = async (newPrefs) => {
             <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'20px 20px 10px' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:2 }}>
                 <div style={{ fontSize:15, fontWeight:600 }}>Cash flow over time</div>
-                {!isPro && (
+                {isPro && (
                   <button onClick={isPro ? generatePDF : () => openUpgrade('pdf')} style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 10px', background:'#f0f7ff', border:'1px solid #c0d8f0', borderRadius:6, fontSize:12, color:'#1a5fa8', fontWeight:500, cursor:'pointer', fontFamily:'var(--font)' }}>
                     <i className="ti ti-file-description" style={{ fontSize:13 }} /> Export PDF
                     <span style={{ background:'#1a5fa8', color:'#fff', fontSize:9, padding:'1px 5px', borderRadius:8, fontWeight:700 }}>PRO</span>
