@@ -1158,8 +1158,12 @@ const handleSavePrefs = async (newPrefs) => {
         setImportAddress(address); setShowAddressFallback(true)
         showToast('Could not match that address. Edit it below and retry.', 'error')
       } else {
-        showToast('Imported: ' + [
-  
+  showToast('Imported: ' + [
+  importedFields.address && 'Address',
+  importedFields.rent && 'Rent estimate',
+  importedFields.price && 'Price',
+  importedFields.taxes && 'Taxes',
+  importedFields._taxMissing && '⚠️ Tax data unavailable — enter local estimate'
 ].filter(Boolean).join(', '))
       }
     } catch (err) {
