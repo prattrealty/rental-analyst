@@ -1188,6 +1188,95 @@ const handleSavePrefs = async (newPrefs) => {
   if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:80}}>Loading...</div>
   if (!supaUser) return <Auth />
 
+  const generatePDF = () => {
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF()
+  const score = calcDealScore(metrics)
+
+  // Header
+  doc.setFillColor(15, 39, 68)
+  doc.rect(0, 0, 210, 30, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Rental Analyst — Deal Report', 14, 14)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.text('rental-analyst.com · Pratt & Associates', 14, 23)
+
+  // Address
+  doc.setTextColor(0, 0, 0)
+  doc.setFontSize(14)
+  doc.setFont('helvetica', 'bold')
+  doc.text(fields.address || 'Property Analysis', 14, 42)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(100, 100, 100)
+  doc.text(`Generated ${new Date().toLocaleDateString()}`, 14, 50)
+
+  // Deal Score
+  if (score) {
+    doc.setFontSize(12)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text(`Deal Score: ${score.score}/100 — ${score.grade.label}`, 14, 62)
+  }
+
+  // Key metrics box
+  doc.setDrawColor(220, 220, 220)
+  doc.setFillColor(245, 248, 255)
+  doc.roundedRect(14, 68, 182, 60, 3, 3, 'FD')
+
+  const metricRows = [
+    ['Purchase Price', fmt(metrics.price), 'Monthly Cash Flow', fmt(metrics.cashflow) + '/mo'],
+    ['Cap Rate', fmtPct(metrics.capRate), 'Cash-on-Cash', fmtPct(metrics.coc)],
+    ['Rent Estimate', fmt(fields.rent) + '/mo', 'DSCR', metrics.dscr ? metrics.dscr.toFixed(2) + 'x' : 'N/A'],
+    ['Total Cash In', fmt(metrics.totalCashIn), 'Gross Yield', fmtPct(metrics.grossYield)],
+  ]
+
+  doc.setFontSize(10)
+  metricRows.forEach((row, i) => {
+    const y = 78 + i * 12
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100, 100, 100)
+    doc.text(row[0], 20, y)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text(row[1], 80, y)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100, 100, 100)
+    doc.text(row[2], 110, y)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(0, 0, 0)
+    doc.text(row[3], 170, y)
+  })
+
+  // Expenses
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(0, 0, 0)
+  doc.text('Monthly Expenses', 14, 142)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+  doc.setTextColor(80, 80, 80)
+  const expenses = [
+    `Mortgage: ${fmt(metrics.monthlyMortgage)}/mo`,
+    `Taxes: ${fmt(metrics.taxes)}/mo`,
+    `Insurance: ${fmt(metrics.insurance)}/mo`,
+    `Management: ${fmt(Math.round(fields.rent * fields.mgmtPct / 100))}/mo`,
+    `Maintenance: ${fmt(metrics.maintenance)}/mo`,
+  ]
+  expenses.forEach((e, i) => doc.text(e, 20 + (i > 2 ? 90 : 0), 152 + (i % 3) * 10))
+
+  // Footer
+  doc.setFillColor(15, 39, 68)
+  doc.rect(0, 280, 210, 20, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(9)
+  doc.text('Scott O. Pratt, Broker · Pratt & Associates · paroffice@gmail.com · Not financial advice', 14, 291)
+
+  doc.save(`${fields.address || 'deal-report'}.pdf`)
+}
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
       <a href="#main-content" className="skip-nav">Skip to main content</a>
@@ -1556,7 +1645,7 @@ const handleSavePrefs = async (newPrefs) => {
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:2 }}>
                 <div style={{ fontSize:15, fontWeight:600 }}>Cash flow over time</div>
                 {!isPro && (
-                  <button onClick={() => openUpgrade('pdf')} style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 10px', background:'#f0f7ff', border:'1px solid #c0d8f0', borderRadius:6, fontSize:12, color:'#1a5fa8', fontWeight:500, cursor:'pointer', fontFamily:'var(--font)' }}>
+                  onClick={isPro ? generatePDF : () => openUpgrade('pdf')} style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 10px', background:'#f0f7ff', border:'1px solid #c0d8f0', borderRadius:6, fontSize:12, color:'#1a5fa8', fontWeight:500, cursor:'pointer', fontFamily:'var(--font)' }}>
                     <i className="ti ti-file-description" style={{ fontSize:13 }} /> Export PDF
                     <span style={{ background:'#1a5fa8', color:'#fff', fontSize:9, padding:'1px 5px', borderRadius:8, fontWeight:700 }}>PRO</span>
                   </button>
