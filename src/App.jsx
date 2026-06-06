@@ -12,7 +12,7 @@ const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency:
 const fmtK = (n) => n >= 1000 ? `$${Math.round(n / 1000)}K` : fmt(n)
 const fmtPct = (n) => isNaN(n) ? '0.00%' : `${n.toFixed(2)}%`
 const FREE_LIMIT = 2
-const PRO_PRICE = 7.99
+const PRO_PRICE = 9.99
 
 function calcMortgage(principal, annualRate, years) {
   const r = annualRate / 100 / 12
@@ -716,9 +716,11 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
   const DEFAULT_PREFS = { min_score: 0, max_price: 999999999, min_cashflow: 0, min_cap_rate: 0, min_coc: 0, property_type: 'any' }
   const activePref = prefs || DEFAULT_PREFS
   const hasSetPrefs = prefs !== null
+  const [dismissedIds, setDismissedIds] = useState(new Set())
 
   // Filter deals against user's buy box
   const matchingDeals = deals.filter(deal => {
+    if (dismissedIds.has(deal.id)) return false
     const d = deal.data || {}
     const m = d.metrics || {}
     const f = d.fields || {}
@@ -817,9 +819,30 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
                   </div>
                 ))}
               </div>
-              <button style={{ width: '100%', padding: '8px', background: grade.color, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                <i className="ti ti-calculator" style={{ fontSize: 13 }} /> Load Full Analysis
-              </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+  <button
+    onClick={e => {
+      e.stopPropagation()
+      const query = encodeURIComponent((deal.address || f.address || '') + ' zillow')
+      window.open('https://www.zillow.com/homes/' + encodeURIComponent(deal.address || f.address || '') + '_rb/', '_blank')
+    }}
+    style={{ padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
+    <i className="ti ti-external-link" style={{ fontSize: 13 }} /> Zillow
+  </button>
+  <button style={{ flex: 1, padding: '8px', background: grade.color, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+    <i className="ti ti-calculator" style={{ fontSize: 13 }} /> Load Full Analysis
+  </button>
+  <button
+    onClick={async e => {
+      e.stopPropagation()
+      await supabase.from('dismissed_deals').upsert({ user_id: supaUser.id, deal_id: deal.id }, { onConflict: 'user_id,deal_id' })
+      setDismissedIds(prev => new Set([...prev, deal.id]))
+    }}
+    title="Dismiss this deal"
+    style={{ padding: '8px 10px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 14, cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center' }}>
+    <i className="ti ti-trash" />
+  </button>
+</div>
             </div>
           )
         })}
@@ -895,7 +918,9 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
               )}
               <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
                 {saved.map(p => (
-                  <div key={p.id} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:16 }}>
+                  <div key={p.id} onClick={() => { onLoadDeal({ fields: p.fields, metrics: p.metrics }) }} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:16, cursor:'pointer', transition:'box-shadow 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
                       <div>
                         <div style={{ fontWeight:600, fontSize:15 }}>{p.fields.address||'Unnamed property'}</div>
