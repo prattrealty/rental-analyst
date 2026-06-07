@@ -982,6 +982,8 @@ export default function App() {
   const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(false)
   const [alertFrequency, setAlertFrequency] = useState('daily')
   const [nudgeDismissed, setNudgeDismissed] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [showNotifDropdown, setShowNotifDropdown] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -1006,6 +1008,27 @@ export default function App() {
       // Load trial status
         const { data: profileData } = await supabase.from('profiles').select('trial_start').eq('id', user.id).single()
         setTrialStart(profileData?.trial_start ?? null)
+        // Load notifications
+const { data: notifData } = await supabase
+  .from('notifications')
+  .select('*')
+  .eq('user_id', user.id)
+  .order('created_at', { ascending: false })
+  .limit(20)
+if (notifData) setNotifications(notifData)
+
+// Realtime subscription — badge updates instantly when new match arrives
+const channel = supabase
+  .channel('notifications')
+  .on('postgres_changes', {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'notifications',
+    filter: `user_id=eq.${user.id}`
+  }, payload => {
+    setNotifications(prev => [payload.new, ...prev])
+  })
+  .subscribe()
       }
       setAuthLoading(false)
     })
@@ -1078,6 +1101,15 @@ const handleSavePrefs = async (newPrefs) => {
     setViewedDealIds(prev => new Set([...prev, dealId]))
     await supabase.from('deal_alert_views').upsert({ user_id: supaUser.id, deal_id: dealId }, { onConflict: 'user_id,deal_id' })
   }
+  const markNotifRead = async (id) => {
+  setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+  await supabase.from('notifications').update({ read: true }).eq('id', id)
+}
+
+const markAllRead = async () => {
+  setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+  await supabase.from('notifications').update({ read: true }).eq('user_id', supaUser.id).eq('read', false)
+}
 
   // Load a deal alert into the analyzer
   const handleLoadDeal = (dealData) => {
@@ -1210,6 +1242,7 @@ const handleSavePrefs = async (newPrefs) => {
 
   const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
   const totalUnread = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
+  const unreadNotifCount = notifications.filter(n => !n.read).length
 
   if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:80}}>Loading...</div>
   if (!supaUser) return <Auth />
@@ -1342,6 +1375,86 @@ const handleSavePrefs = async (newPrefs) => {
               <i className="ti ti-bolt" style={{ fontSize:13 }} /> Go Pro
             </button>
           )}
+         {/* 🔔 Notification Bell */}
+<div style={{ position: 'relative' }}>
+  <button
+    onClick={() => setShowNotifDropdown(v => !v)}
+    style={{
+      padding: '6px 10px', background: 'rgba(255,255,255,0.08)',
+      color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.15)',
+      borderRadius: 6, fontSize: 16, cursor: 'pointer', position: 'relative',
+      display: 'flex', alignItems: 'center'
+    }}>
+    <i className="ti ti-bell" />
+    {unreadNotifCount > 0 && (
+      <span style={{
+        position: 'absolute', top: -4, right: -4,
+        background: '#a32d2d', color: '#fff',
+        fontSize: 9, fontWeight: 700,
+        padding: '1px 5px', borderRadius: 10,
+        minWidth: 16, textAlign: 'center'
+      }}>{unreadNotifCount}</span>
+    )}
+  </button>
+
+  {showNotifDropdown && (
+    <div style={{
+      position: 'absolute', top: 40, right: 0, width: 320,
+      background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+      zIndex: 500, overflow: 'hidden'
+    }}>
+      <div style={{
+        padding: '12px 16px', borderBottom: '1px solid var(--border)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+      }}>
+        <div style={{ fontSize: 13, fontWeight: 700 }}>🔔 Deal Matches</div>
+        {unreadNotifCount > 0 && (
+          <button onClick={markAllRead} style={{
+            fontSize: 11, color: '#1a5fa8', background: 'none',
+            border: 'none', cursor: 'pointer', fontFamily: 'var(--font)'
+          }}>Mark all read</button>
+        )}
+      </div>
+      {notifications.length === 0 ? (
+        <div style={{ padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--text3)' }}>
+          No notifications yet
+        </div>
+      ) : (
+        notifications.slice(0, 10).map(n => (
+          <div key={n.id}
+            onClick={() => markNotifRead(n.id)}
+            style={{
+              padding: '12px 16px', borderBottom: '1px solid var(--border)',
+              cursor: 'pointer', background: n.read ? 'transparent' : '#f0f7ff',
+              display: 'flex', gap: 10, alignItems: 'flex-start'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#f4f8ff'}
+            onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : '#f0f7ff'}
+          >
+            <div style={{
+              width: 36, height: 36, borderRadius: 8,
+              background: '#1a5fa822', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', flexShrink: 0
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#1a5fa8' }}>{n.deal_score}</span>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {n.address || 'New deal match'}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text2)' }}>
+                Score {n.deal_score} · {n.cash_flow_est ? `$${n.cash_flow_est.toLocaleString()}/mo CF · ` : ''}{new Date(n.created_at).toLocaleDateString()}
+              </div>
+            </div>
+            {!n.read && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#1a5fa8', flexShrink: 0, marginTop: 4 }} />}
+          </div>
+        ))
+      )}
+    </div>
+  )}
+</div>
+
           <button onClick={() => supabase.auth.signOut()} aria-label="Sign out" title="Sign out" style={{ marginLeft:4, padding:'6px 10px', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:6, fontSize:16, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center' }}>
             <i className="ti ti-logout" />
           </button>
