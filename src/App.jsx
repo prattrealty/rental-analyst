@@ -1266,8 +1266,9 @@ export default function App() {
         setAlertFrequency(prefsData.alert_frequency ?? 'daily')
 }
       // Load trial status
-        const { data: profileData } = await supabase.from('profiles').select('trial_start').eq('id', user.id).single()
+        const { data: profileData } = await supabase.from('profiles').select('trial_start, stripe_subscription_status').eq('id', user.id).single()
         setTrialStart(profileData?.trial_start ?? null)
+        setIsPro(profileData?.stripe_subscription_status === 'active')
         // Load notifications
 const { data: notifData } = await supabase
   .from('notifications')
@@ -1311,7 +1312,7 @@ const channel = supabase
   const [showSignup, setShowSignup] = useState(false)
   const [signupForm, setSignupForm] = useState({ firstName:'', email:'', password:'', agreed:false })
   const [signupError, setSignupError] = useState('')
-  const [isPro, setIsPro] = useState(() => localStorage.getItem('ra_pro') === 'true')
+  const [isPro, setIsPro] = useState(false)
   const [trialStart, setTrialStart] = useState(null)
   const trialActive = trialStart && (new Date() - new Date(trialStart)) < 7 * 24 * 60 * 60 * 1000
   const [saved, setSaved] = useState([])
@@ -1420,13 +1421,6 @@ const markAllRead = async () => {
   const handleDelete = async (id) => {
     await supabase.from('properties').delete().eq('data->>id', String(id)).eq('user_id', supaUser.id)
     setSaved(prev => prev.filter(p => p.id !== id))
-  }
-
-  const handleUpgrade = () => {
-    setIsPro(true)
-    localStorage.setItem('ra_pro', 'true')
-    setShowUpgrade(false)
-    showToast('🎉 Welcome to Pro! All features unlocked.')
   }
 
   const [importAddress, setImportAddress] = useState('')
@@ -1599,7 +1593,7 @@ const markAllRead = async () => {
     <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
       <a href="#main-content" className="skip-nav">Skip to main content</a>
       {showWalkthrough && <WalkthroughBubble onDone={() => { setShowWalkthrough(false); localStorage.setItem('ra_toured', '1') }} />}
-      {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={handleUpgrade} trialStart={trialStart} onStartTrial={startTrial} />}
+      {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={() => setShowUpgrade(false)} trialStart={trialStart} onStartTrial={startTrial} />}
       {showSignup && <SignupModal onClose={() => setShowSignup(false)} form={signupForm} setForm={setSignupForm} error={signupError} onSubmit={() => {
         if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
         if (!signupForm.email.includes('@')) { setSignupError('Please enter a valid email.'); return }
