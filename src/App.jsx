@@ -498,6 +498,8 @@ function BuyBoxPanel({ prefs, onSave, emailAlertsEnabled, setEmailAlertsEnabled,
  const [local, setLocal] = useState({ ...prefs })
 const [saved, setSaved] = useState(false)
 const [markets, setMarkets] = useState([])
+const [zips, setZips] = useState([])
+const [zipInput, setZipInput] = useState('')
 const [cityInput, setCityInput] = useState('')
 const set = (key, val) => setLocal(p => ({ ...p, [key]: val }))
 // Add this right after your existing useState declarations in BuyBoxPanel
@@ -510,8 +512,11 @@ useEffect(() => {
       .eq('user_id', user.id)
       .maybeSingle()
     if (data?.markets && Array.isArray(data.markets)) {
-      setMarkets(data.markets)
-    }
+  setMarkets(data.markets)
+}
+if (data?.zips && Array.isArray(data.zips)) {
+  setZips(data.zips)
+}
   }
   loadMarkets()
 }, [user])
@@ -535,13 +540,14 @@ const handleSave = async () => {
   onSave(local)
   if (user) {
     await supabase.from('user_alert_criteria').upsert({
-      user_id: user.id,
-      markets,
-      min_coc: local.min_coc ?? 8,
-      max_price: local.max_price ?? 300000,
-      property_types: local.property_type ? [local.property_type] : ['Single Family'],
-      email_alerts: emailAlertsEnabled
-    }, { onConflict: 'user_id' })
+  user_id: user.id,
+  markets,
+  zips,
+  min_coc: local.min_coc ?? 8,
+  max_price: local.max_price ?? 300000,
+  property_types: local.property_type ? [local.property_type] : ['Single Family'],
+  email_alerts: emailAlertsEnabled
+}, { onConflict: 'user_id' })
   }
   setSaved(true)
   setTimeout(() => setSaved(false), 2000)
@@ -583,19 +589,57 @@ const handleSave = async () => {
               ))}
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              <input
-                type="text"
-                placeholder="Add a city (e.g. Pensacola, FL)"
-                value={cityInput}
-                onChange={e => setCityInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addCity()}
-                style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }}
-              />
-              <button onClick={addCity} style={{
-                padding: '6px 12px', borderRadius: 6, border: 'none',
-                background: '#1a5fa8', color: 'white', fontSize: 12, cursor: 'pointer'
-              }}>+ Add</button>
-            </div>
+  <input
+    type="text"
+    placeholder="Add a city (e.g. Pensacola, FL)"
+    value={cityInput}
+    onChange={e => setCityInput(e.target.value)}
+    onKeyDown={e => e.key === 'Enter' && addCity()}
+    style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }}
+  />
+  <button onClick={addCity} style={{
+    padding: '6px 12px', borderRadius: 6, border: 'none',
+    background: '#1a5fa8', color: 'white', fontSize: 12, cursor: 'pointer'
+  }}>+ Add</button>
+</div>
+
+{/* ZIP CODE CHIPS */}
+<div style={{ marginTop: 12 }}>
+  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', display: 'block', marginBottom: 8 }}>ZIP CODES TO WATCH</label>
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+    {zips.map(z => (
+      <button key={z} onClick={() => setZips(prev => prev.filter(v => v !== z))} style={{
+        padding: '3px 10px', borderRadius: 20, border: '1.5px solid #1a5fa8',
+        background: '#e8f0fb', color: '#1a5fa8',
+        cursor: 'pointer', fontSize: 12, fontWeight: 500
+      }}>{z} ×</button>
+    ))}
+  </div>
+  <div style={{ display: 'flex', gap: 6 }}>
+    <input
+      type="text"
+      placeholder="Add a zip (e.g. 30114)"
+      value={zipInput}
+      onChange={e => setZipInput(e.target.value)}
+      onKeyDown={e => {
+        if (e.key === 'Enter') {
+          const z = zipInput.trim()
+          if (z && !zips.includes(z)) setZips(prev => [...prev, z])
+          setZipInput('')
+        }
+      }}
+      style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }}
+    />
+    <button onClick={() => {
+      const z = zipInput.trim()
+      if (z && !zips.includes(z)) setZips(prev => [...prev, z])
+      setZipInput('')
+    }} style={{
+      padding: '6px 12px', borderRadius: 6, border: 'none',
+      background: '#1a5fa8', color: 'white', fontSize: 12, cursor: 'pointer'
+    }}>+ Add</button>
+  </div>
+</div>
           </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
