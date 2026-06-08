@@ -972,6 +972,27 @@ const DEFAULT_FIELDS = {
   rate:7.25, term:30,
   rentGrowth:2.5, appreciation:3.0,
 }
+function ReferralStats({ userEmail }) {
+  const [count, setCount] = useState(null)
+  useEffect(() => {
+    if (!userEmail) return
+    const code = userEmail.split('@')[0]
+    supabase.from('referrals').select('id', { count: 'exact' }).eq('ref_code', code)
+      .then(({ count: c }) => setCount(c || 0))
+  }, [userEmail])
+
+  if (count === null) return null
+  return (
+    <div style={{
+      margin: '4px 0 8px', padding: '10px 12px',
+      background: 'rgba(26,95,168,0.06)',
+      border: '1px solid rgba(26,95,168,0.15)',
+      borderRadius: 8, fontSize: 12, color: 'var(--text2)'
+    }}>
+      <span style={{ fontWeight: 600, color: 'var(--text)' }}>{count}</span> investor{count !== 1 ? 's' : ''} signed up via your link
+    </div>
+  )
+}
 function SideDrawer({ open, onClose, user, isPro, onUpgrade, onSignOut }) {
   const [glossaryOpen, setGlossaryOpen] = useState(false)
 
@@ -1046,11 +1067,13 @@ function SideDrawer({ open, onClose, user, isPro, onUpgrade, onSignOut }) {
             action={!isPro ? { label: 'Upgrade', onClick: onUpgrade } : null}
           />
           <DrawerItem icon="ti-credit-card" label="Manage Billing" onClick={() => window.open('https://billing.stripe.com/p/login/test_placeholder', '_blank')} />
-          <DrawerItem icon="ti-share" label="My Referral Link" onClick={() => {
-            const link = `https://rental-analyst.com/?ref=${user?.id?.slice(0,8) || 'share'}`
-            navigator.clipboard?.writeText(link)
-            alert('Referral link copied!\n\n' + link)
-          }} />
+          <DrawerItem icon="ti-share" label="Copy My Referral Link" onClick={async () => {
+  const code = user?.email?.split('@')[0] || user?.id?.slice(0,8)
+  const link = `https://rental-analyst.com/?ref=${code}`
+  await navigator.clipboard?.writeText(link)
+  alert('Referral link copied to clipboard!\n\n' + link + '\n\nShare this with investors. When they sign up through your link, they\'re tagged as your referral.')
+}} />
+<ReferralStats userEmail={user?.email} />
         </DrawerSection>
 
         {/* LENDERS */}
@@ -1243,6 +1266,7 @@ export default function App() {
   const [nudgeDismissed, setNudgeDismissed] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
+  const [refCode] = useState(() => new URLSearchParams(window.location.search).get('ref') || null)
   const [showDrawer, setShowDrawer] = useState(false)
 
   useEffect(() => {
@@ -1266,9 +1290,19 @@ export default function App() {
         setAlertFrequency(prefsData.alert_frequency ?? 'daily')
 }
       // Load trial status
-        const { data: profileData } = await supabase.from('profiles').select('trial_start, stripe_subscription_status').eq('id', user.id).single()
-        setTrialStart(profileData?.trial_start ?? null)
-        setIsPro(profileData?.stripe_subscription_status === 'active')
+        const { data: profileData } = await supabase.from('profiles').select('trial_start, stripe_subscription_status, referred_by').eq('id', user.id).single()
+setTrialStart(profileData?.trial_start ?? null)
+setIsPro(profileData?.stripe_subscription_status === 'active')
+
+// Save ref code if first time and not already tagged
+if (refCode && !profileData?.referred_by) {
+  await supabase.from('profiles').update({ referred_by: refCode }).eq('id', user.id)
+  await supabase.from('referrals').insert({
+    ref_code: refCode,
+    referred_user_id: user.id,
+    referred_email: user.email
+  })
+}
         // Load notifications
 const { data: notifData } = await supabase
   .from('notifications')
