@@ -972,6 +972,265 @@ const DEFAULT_FIELDS = {
   rate:7.25, term:30,
   rentGrowth:2.5, appreciation:3.0,
 }
+function SideDrawer({ open, onClose, user, isPro, onUpgrade, onSignOut }) {
+  const [glossaryOpen, setGlossaryOpen] = useState(false)
+
+  const glossaryTerms = [
+    { term: 'Cap Rate', def: 'Net Operating Income ÷ Purchase Price. Measures a property\'s income yield independent of financing. 6%+ is generally acceptable; 8%+ is strong.' },
+    { term: 'Cash-on-Cash (CoC)', def: 'Annual cash flow ÷ total cash invested. Measures your actual return on the dollars you put in. 8%+ is strong for most markets.' },
+    { term: 'NOI', def: 'Net Operating Income — total rent income minus all operating expenses (taxes, insurance, management, maintenance). Does NOT include mortgage payments.' },
+    { term: 'DSCR', def: 'Debt Service Coverage Ratio — NOI ÷ monthly mortgage. Lenders require 1.25x+. Below 1.0 means the property can\'t service its own debt.' },
+    { term: '1% Rule', def: 'Monthly rent should equal at least 1% of the purchase price. A $200K property should rent for $2,000+/mo. Quick filter — not a guarantee of cash flow.' },
+    { term: 'IRR', def: 'Internal Rate of Return — annualized return on investment over time, accounting for when money flows in and out. 10%+ is generally good for real estate.' },
+    { term: 'Equity Multiple', def: 'Total return ÷ initial investment. A 2.0x equity multiple means you doubled your money. Includes cash flow + appreciation + sale proceeds.' },
+    { term: 'Gross Yield', def: 'Annual rent ÷ purchase price. A quick measure of income relative to price. 7%+ is generally healthy.' },
+    { term: 'Break-even Rent', def: 'The minimum monthly rent needed to cover all expenses including mortgage. If market rent is below this, the deal loses money every month.' },
+    { term: 'BRRRR', def: 'Buy, Rehab, Rent, Refinance, Repeat — a strategy to recycle capital by pulling equity out via cash-out refinance after a property is stabilized.' },
+  ]
+
+  if (!open) return null
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+          zIndex: 900, cursor: 'pointer'
+        }}
+      />
+      {/* Drawer panel */}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, bottom: 0, width: 300,
+        background: 'var(--surface)', borderRight: '1px solid var(--border)',
+        zIndex: 1000, display: 'flex', flexDirection: 'column',
+        overflowY: 'auto', boxShadow: '4px 0 24px rgba(0,0,0,0.2)',
+        animation: 'slideIn 0.22s ease'
+      }}>
+        <style>{`@keyframes slideIn { from { transform: translateX(-100%) } to { transform: translateX(0) } }`}</style>
+
+        {/* Drawer Header */}
+        <div style={{
+          background: 'var(--navy)', padding: '20px 20px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <i className="ti ti-home-dollar" style={{ fontSize: 20, color: '#4da8ff' }} />
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff' }}>Rental Analyst</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+                {user?.email?.split('@')[0] || 'Investor'}
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{
+            background: 'rgba(255,255,255,0.1)', border: 'none',
+            borderRadius: 6, color: '#fff', cursor: 'pointer',
+            width: 28, height: 28, fontSize: 16,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font)'
+          }}>
+            <i className="ti ti-x" />
+          </button>
+        </div>
+
+        {/* MY ACCOUNT */}
+        <DrawerSection label="My Account" icon="ti-user">
+          <DrawerItem icon="ti-mail" label={user?.email || 'Account'} small />
+          <DrawerItem
+            icon="ti-crown"
+            label={isPro ? 'Pro Plan — Active' : 'Free Plan'}
+            badge={isPro ? { text: 'PRO', color: '#4da8ff' } : null}
+            action={!isPro ? { label: 'Upgrade', onClick: onUpgrade } : null}
+          />
+          <DrawerItem icon="ti-credit-card" label="Manage Billing" onClick={() => window.open('https://billing.stripe.com/p/login/test_placeholder', '_blank')} />
+          <DrawerItem icon="ti-share" label="My Referral Link" onClick={() => {
+            const link = `https://rental-analyst.com/?ref=${user?.id?.slice(0,8) || 'share'}`
+            navigator.clipboard?.writeText(link)
+            alert('Referral link copied!\n\n' + link)
+          }} />
+        </DrawerSection>
+
+        {/* LENDERS */}
+        <DrawerSection label="Lenders" icon="ti-building-bank">
+          {/* Featured lender card */}
+          <div style={{
+            background: 'linear-gradient(135deg, #0f2744, #1a5fa8)',
+            borderRadius: 10, padding: '14px 16px', margin: '4px 0 8px',
+            border: '1px solid rgba(77,168,255,0.3)'
+          }}>
+            <div style={{ fontSize: 9, color: '#4da8ff', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: 4 }}>Featured Lender</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 2 }}>DSCR Loans Available</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 10 }}>No income verification · Close in 30 days · Investor-friendly</div>
+            <a
+              href="mailto:paroffice@gmail.com?subject=DSCR Lender Referral from Rental Analyst"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                padding: '7px 12px', background: '#4da8ff', color: '#fff',
+                border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                textDecoration: 'none', cursor: 'pointer'
+              }}>
+              <i className="ti ti-mail" style={{ fontSize: 13 }} /> Get Pre-Qualified
+            </a>
+          </div>
+          <DrawerItem icon="ti-home-dollar" label="DSCR Loans" sub="No W2 required · based on rent income" />
+          <DrawerItem icon="ti-hammer" label="Hard Money" sub="Fast close · fix-and-flip financing" />
+          <DrawerItem icon="ti-building" label="Conventional Rental" sub="30yr fixed · best long-term rates" />
+          <div style={{ padding: '8px 0 4px' }}>
+            <div style={{ fontSize: 10, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.5 }}>
+              Want to be the featured lender?{' '}
+              <a href="mailto:paroffice@gmail.com?subject=Featured Lender Inquiry" style={{ color: '#1a5fa8', textDecoration: 'none', fontWeight: 500 }}>Contact Scott</a>
+            </div>
+          </div>
+        </DrawerSection>
+
+        {/* WORK WITH SCOTT */}
+        <DrawerSection label="Work with Scott" icon="ti-user-check">
+          <div style={{
+            background: 'rgba(26,95,168,0.06)', border: '1px solid rgba(26,95,168,0.15)',
+            borderRadius: 10, padding: '12px 14px', margin: '4px 0 8px'
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Scott O. Pratt, Broker</div>
+            <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 8, lineHeight: 1.5 }}>
+              Pratt & Associates · Woodstock, GA<br />
+              Investor-focused buyer's agent · Metro Atlanta
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text2)', fontStyle: 'italic', marginBottom: 10, lineHeight: 1.5 }}>
+              "I built this tool so investors could see what I see. When the numbers work — let's close."
+            </div>
+            <a
+              href="mailto:paroffice@gmail.com?subject=Ready to invest — from Rental Analyst"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                padding: '8px 12px', background: '#1a5fa8', color: '#fff',
+                borderRadius: 6, fontSize: 12, fontWeight: 600,
+                textDecoration: 'none'
+              }}>
+              <i className="ti ti-mail" style={{ fontSize: 13 }} /> Email Scott
+            </a>
+          </div>
+          <DrawerItem icon="ti-map-pin" label="Serving Metro Atlanta" sub="Woodstock · Canton · Marietta · Roswell" />
+          <DrawerItem icon="ti-certificate" label="Licensed Broker, GA" />
+        </DrawerSection>
+
+        {/* RESOURCES */}
+        <DrawerSection label="Resources" icon="ti-book">
+          <div
+            onClick={() => setGlossaryOpen(v => !v)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '9px 12px', borderRadius: 8, cursor: 'pointer',
+              background: glossaryOpen ? 'rgba(26,95,168,0.07)' : 'transparent',
+              border: '1px solid var(--border)', marginBottom: 4
+            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <i className="ti ti-vocabulary" style={{ fontSize: 15, color: '#1a5fa8' }} />
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>Investor Glossary</span>
+            </div>
+            <i className={`ti ${glossaryOpen ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ fontSize: 14, color: 'var(--text3)' }} />
+          </div>
+          {glossaryOpen && (
+            <div style={{
+              background: 'var(--surface2)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '8px 12px', marginBottom: 8
+            }}>
+              {glossaryTerms.map(t => (
+                <div key={t.term} style={{ padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 3 }}>{t.term}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.5 }}>{t.def}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <DrawerItem icon="ti-help-circle" label="How to Use the Calculator" onClick={() => {
+            onClose()
+            // Re-trigger walkthrough
+            localStorage.removeItem('ra_toured')
+            window.location.reload()
+          }} />
+          <DrawerItem icon="ti-mail" label="Send Feedback" onClick={() => window.open('mailto:paroffice@gmail.com?subject=Rental Analyst Feedback', '_blank')} />
+        </DrawerSection>
+
+        {/* SETTINGS */}
+        <DrawerSection label="Settings" icon="ti-settings">
+          <DrawerItem icon="ti-logout" label="Sign Out" onClick={onSignOut} danger />
+        </DrawerSection>
+
+        <div style={{ padding: '12px 20px 20px', marginTop: 'auto' }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)', textAlign: 'center', lineHeight: 1.6 }}>
+            Rental Analyst · rental-analyst.com<br />
+            Pratt & Associates · Woodstock, GA
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
+/* ── Drawer sub-components ── */
+function DrawerSection({ label, icon, children }) {
+  return (
+    <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--border)' }}>
+      <div style={{
+        fontSize: 10, fontWeight: 700, color: 'var(--text3)',
+        textTransform: 'uppercase', letterSpacing: '1.2px',
+        display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8
+      }}>
+        <i className={`ti ${icon}`} style={{ fontSize: 12 }} />
+        {label}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function DrawerItem({ icon, label, sub, badge, action, onClick, small, danger }) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 10px', borderRadius: 8, cursor: onClick ? 'pointer' : 'default',
+        marginBottom: 2,
+        transition: 'background 0.15s'
+      }}
+      onMouseEnter={e => onClick && (e.currentTarget.style.background = 'var(--surface2)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+    >
+      <i className={`ti ${icon}`} style={{
+        fontSize: 16, flexShrink: 0,
+        color: danger ? 'var(--red)' : '#1a5fa8'
+      }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: small ? 12 : 13, fontWeight: 500,
+          color: danger ? 'var(--red)' : 'var(--text)',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+        }}>{label}</div>
+        {sub && <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 1 }}>{sub}</div>}
+      </div>
+      {badge && (
+        <span style={{
+          background: badge.color, color: '#fff',
+          fontSize: 9, fontWeight: 700, padding: '2px 6px',
+          borderRadius: 8, letterSpacing: '0.5px'
+        }}>{badge.text}</span>
+      )}
+      {action && (
+        <button
+          onClick={e => { e.stopPropagation(); action.onClick() }}
+          style={{
+            padding: '3px 8px', background: '#1a5fa8', color: '#fff',
+            border: 'none', borderRadius: 5, fontSize: 11,
+            fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)',
+            whiteSpace: 'nowrap'
+          }}>{action.label}</button>
+      )}
+    </div>
+  )
+}
 
 export default function App() {
   const [supaUser, setSupaUser] = useState(null)
@@ -984,6 +1243,7 @@ export default function App() {
   const [nudgeDismissed, setNudgeDismissed] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
+  const [showDrawer, setShowDrawer] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -1351,7 +1611,28 @@ const markAllRead = async () => {
         fetch('https://script.google.com/macros/s/AKfycbwb4OwFfCC7NsQrpdmtUfdM6S-AsRkXVpqutyGYt6WfJvTx5exHyNmXXFdeBaQqXfZ8JA/exec', { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) })
       }} />}
 
+      <SideDrawer
+        open={showDrawer}
+        onClose={() => setShowDrawer(false)}
+        user={supaUser}
+        isPro={isPro}
+        onUpgrade={() => { setShowDrawer(false); openUpgrade('drawer') }}
+        onSignOut={() => supabase.auth.signOut()}
+      />
       <header style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }} role="banner">
+        <button
+          onClick={() => setShowDrawer(true)}
+          style={{
+            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 6, color: 'rgba(255,255,255,0.85)', cursor: 'pointer',
+            width: 34, height: 34, fontSize: 18,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'var(--font)', flexShrink: 0
+          }}
+          aria-label="Open menu"
+        >
+          <i className="ti ti-menu-2" />
+        </button>
         <div style={{ display:'flex', alignItems:'center', gap:8, fontWeight:600, fontSize:15, letterSpacing:'-0.3px' }}>
           <i className="ti ti-home-dollar" style={{ fontSize:20, color:'#4da8ff' }} />
           Rental Analyst
