@@ -1695,7 +1695,7 @@ const markAllRead = async () => {
       <a href="#main-content" className="skip-nav">Skip to main content</a>
       {showWalkthrough && <WalkthroughBubble onDone={() => { setShowWalkthrough(false); localStorage.setItem('ra_toured', '1') }} />}
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={() => setShowUpgrade(false)} trialStart={trialStart} onStartTrial={startTrial} />}
-      {showSignup && <SignupModal onClose={() => setShowSignup(false)} form={signupForm} setForm={setSignupForm} error={signupError} onSubmit={() => {
+      {showSignup && <SignupModal onClose={() => setShowSignup(false)} form={signupForm} setForm={setSignupForm} error={signupError} onSubmit={async () => {
         if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
         if (!signupForm.email.includes('@')) { setSignupError('Please enter a valid email.'); return }
         if (signupForm.password.length < 6) { setSignupError('Password must be at least 6 characters.'); return }
