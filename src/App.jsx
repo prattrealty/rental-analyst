@@ -142,27 +142,26 @@ function calcDealScore(metrics) {
   let score = 0
   const breakdown = []
 
-  const capPts = metrics.capRate >= 8 ? 35 : metrics.capRate >= 6 ? 26 : metrics.capRate >= 5 ? 18 : metrics.capRate >= 3 ? 9 : 2
-  score += capPts
-  breakdown.push({ label: 'Cap rate', score: capPts, max: 35, value: metrics.capRate.toFixed(2) + '%' })
+  const cfPts = metrics.cashflow >= 300 ? 30 : metrics.cashflow >= 100 ? 20 : metrics.cashflow >= 0 ? 10 : 0
+  score += cfPts
+  breakdown.push({ label: 'Monthly cash flow', score: cfPts, max: 30, value: '$' + Math.round(metrics.cashflow) + '/mo' })
 
   const cocPts = metrics.coc >= 8 ? 25 : metrics.coc >= 5 ? 18 : metrics.coc >= 2 ? 10 : metrics.coc >= 0 ? 4 : 0
   score += cocPts
   breakdown.push({ label: 'Cash-on-cash', score: cocPts, max: 25, value: metrics.coc.toFixed(2) + '%' })
 
-  const gyPts = metrics.grossYield >= 9 ? 20 : metrics.grossYield >= 8 ? 15 : metrics.grossYield >= 7 ? 10 : metrics.grossYield >= 5 ? 5 : 2
-  score += gyPts
-  breakdown.push({ label: 'Gross yield', score: gyPts, max: 20, value: metrics.grossYield.toFixed(2) + '%' })
+  const capPts = metrics.capRate >= 8 ? 25 : metrics.capRate >= 6 ? 18 : metrics.capRate >= 5 ? 12 : metrics.capRate >= 3 ? 6 : 2
+  score += capPts
+  breakdown.push({ label: 'Cap rate', score: capPts, max: 25, value: metrics.capRate.toFixed(2) + '%' })
 
-  const cfPts = metrics.cashflow >= 300 ? 18 : metrics.cashflow >= 100 ? 12 : metrics.cashflow >= 0 ? 6 : 0
-  score += cfPts
-  breakdown.push({ label: 'Monthly cash flow', score: cfPts, max: 18, value: '$' + Math.round(metrics.cashflow) + '/mo' })
+  const gyPts = metrics.grossYield >= 9 ? 12 : metrics.grossYield >= 8 ? 9 : metrics.grossYield >= 7 ? 6 : metrics.grossYield >= 5 ? 3 : 1
+  score += gyPts
+  breakdown.push({ label: 'Gross yield', score: gyPts, max: 12, value: metrics.grossYield.toFixed(2) + '%' })
 
   const beRatio = metrics.breakeven > 0 ? metrics.cashflow / metrics.breakeven : 0
-  const bePts = beRatio >= 0.15 ? 7 : beRatio >= 0.05 ? 5 : beRatio >= 0 ? 2 : 0
+  const bePts = beRatio >= 0.15 ? 8 : beRatio >= 0.05 ? 5 : beRatio >= 0 ? 2 : 0
   score += bePts
-  breakdown.push({ label: 'Break-even buffer', score: bePts, max: 7, value: (beRatio * 100).toFixed(1) + '% above break-even' })
-
+  breakdown.push({ label: 'Break-even buffer', score: bePts, max: 8, value: (beRatio * 100).toFixed(1) + '% above break-even' })
   const grade = score >= 75
     ? { label: 'Strong Deal', color: '#1a7a4a', bg: '#eaf3de', emoji: '🟢' }
     : score >= 50
@@ -358,12 +357,12 @@ function SignupModal({ onClose, form, setForm, onSubmit, error }) {
 
 function UpgradeModal({ onClose, trigger, onUpgrade, trialStart, onStartTrial }) {
   const features = [
+    { icon: 'ti-bell', label: 'Automated Deal Alerts', free: false, pro: true },
+    { icon: 'ti-settings', label: 'Custom Buy Box criteria', free: false, pro: true },
+    { icon: 'ti-mail', label: 'Email alerts when deals match', free: false, pro: true },
     { icon: 'ti-building-store', label: 'Unlimited property saves', free: '2 properties', pro: 'Unlimited' },
-    { icon: 'ti-chart-bar', label: 'Full portfolio dashboard', free: false, pro: true },
     { icon: 'ti-file-description', label: 'PDF report export', free: false, pro: true },
-    { icon: 'ti-history', label: 'Rent comp history', free: false, pro: true },
-    { icon: 'ti-link', label: 'Zillow URL import', free: false, pro: true },
-    { icon: 'ti-calculator', label: 'All metrics & charts', free: true, pro: true },
+    { icon: 'ti-calculator', label: 'Full analyzer & charts', free: true, pro: true },
   ]
   const handleStripeCheckout = async () => {
     try {
@@ -378,8 +377,8 @@ function UpgradeModal({ onClose, trigger, onUpgrade, trialStart, onStartTrial })
         <div style={{ background: 'var(--navy)', padding: '28px 28px 24px', color: '#fff', position: 'relative' }}>
           <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', width: 28, height: 28, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className="ti ti-x" /></button>
           <div style={{ fontSize: 11, letterSpacing: '1px', textTransform: 'uppercase', color: '#4da8ff', marginBottom: 6, fontWeight: 600 }}>{trigger === 'save' ? '🔒 Free limit reached' : '⚡ Upgrade to Pro'}</div>
-          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{trigger === 'save' ? "You've saved 2 properties" : 'Unlock the full toolkit'}</div>
-          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.65)' }}>{trigger === 'save' ? 'Upgrade to Pro to save unlimited properties and track your full portfolio.' : 'Everything serious investors need — all in one place.'}</div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{trigger === 'save' ? "You've saved 2 properties" : 'Get deals before anyone else'}</div>
+          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.65)' }}>{trigger === 'save' ? 'Upgrade to Pro to save unlimited properties and track your full portfolio.' : 'Set your Buy Box. We scan the market daily and email you when a match hits — automatically.'}</div>
         </div>
         <div style={{ padding: '20px 28px 0' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
