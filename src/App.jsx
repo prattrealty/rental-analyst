@@ -14,6 +14,16 @@ const fmtPct = (n) => isNaN(n) ? '0.00%' : `${n.toFixed(2)}%`
 const FREE_LIMIT = 2
 const PRO_PRICE = 9.99
 
+// ── SHARE LINK ENCODE / DECODE ──────────────────────────────────────────────
+const encodeDeal = (fields) => {
+  try { return btoa(encodeURIComponent(JSON.stringify(fields))) }
+  catch { return '' }
+}
+const decodeDeal = (str) => {
+  try { return JSON.parse(decodeURIComponent(atob(str))) }
+  catch { return null }
+}
+
 function calcMortgage(principal, annualRate, years) {
   const r = annualRate / 100 / 12
   const n = years * 12
@@ -215,6 +225,191 @@ function DealScoreCard({ metrics }) {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+// ── SHARED DEAL CARD (read-only view for ?deal= links) ──────────────────────
+function SharedDealCard({ fields, onAnalyze }) {
+  const metrics = calcMetrics(fields)
+  const scoreResult = calcDealScore(metrics)
+  const grade = scoreResult?.grade || { color: '#1a7a4a', emoji: '🟢', label: 'Strong Deal' }
+  const score = scoreResult?.score ?? 0
+  const photo = fields._photoUrl || null
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 440, overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.35)' }}>
+        {photo && (
+          <img src={photo} alt={fields.address || 'Property'}
+            onError={e => { e.currentTarget.style.display = 'none' }}
+            style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }} />
+        )}
+        <div style={{ background: 'var(--navy)', padding: '20px 24px', color: '#fff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600 }}>
+            <i className="ti ti-home-dollar" style={{ fontSize: 18, color: '#4da8ff' }} /> Rental Analyst
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 700, marginTop: 10 }}>{fields.address || 'Property Analysis'}</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>
+            {fields.neighborhood && fields.zip ? `${fields.neighborhood}, ${fields.zip}` : 'Shared analysis'}
+          </div>
+        </div>
+
+        <div style={{ padding: '22px 24px' }}>
+          {scoreResult && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, padding: '14px 16px', background: grade.color + '14', borderRadius: 12 }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', flexShrink: 0, background: grade.color, color: '#fff', fontSize: 22, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{score}</div>
+              <div>
+                <div style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text2)', fontWeight: 700 }}>Deal Score</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: grade.color }}>{grade.emoji} {grade.label}</div>
+              </div>
+            </div>
+          )}
+
+          {(() => {
+            const tv = templateVerdict(metrics, scoreResult?.score ?? 0)
+            if (!tv) return null
+            const cs = CALL_STYLE[tv.call] || CALL_STYLE.Maybe
+            return (
+              <div style={{ marginBottom: 20, padding: '14px 16px', background: cs.bg, borderRadius: 10 }}>
+                <div style={{ fontWeight: 800, color: cs.color, marginBottom: 6 }}>{cs.emoji} {tv.call}</div>
+                <div style={{ fontSize: 13, color: '#333', lineHeight: 1.6 }}>{tv.verdict}</div>
+              </div>
+            )
+          })()}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+            {[
+              ['Monthly Cash Flow', fmt(metrics.cashflow) + '/mo', metrics.cashflow >= 0 ? 'var(--green)' : 'var(--red)'],
+              ['Cash-on-Cash', fmtPct(metrics.coc), 'var(--text)'],
+              ['Cap Rate', fmtPct(metrics.capRate), 'var(--text)'],
+              ['Monthly Rent', fmt(fields.rent || 0), 'var(--text)'],
+            ].map(([label, val, color]) => (
+              <div key={label} style={{ padding: '12px 14px', border: '1px solid var(--border)', borderRadius: 10 }}>
+                <div style={{ fontSize: 10, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--text3)', fontWeight: 700, marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 19, fontWeight: 700, color }}>{val}</div>
+              </div>
+            ))}
+          </div>
+
+          <button onClick={onAnalyze} style={{ width: '100%', padding: 14, background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+            Analyze it yourself →
+          </button>
+          <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', marginTop: 10 }}>
+            Free · run your own numbers, no signup required
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+            Analyzed by Scott Pratt · rental-analyst.com
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── GUT-CHECK VERDICT ───────────────────────────────────────────────────────
+// Instant, deterministic verdict built from existing metrics + deal score.
+// Safety net: works offline, never errors, never makes things up.
+function templateVerdict(metrics, score) {
+  if (!(metrics.price > 0) || !(metrics.rent > 0)) return null
+
+  const cf = metrics.cashflow
+  const coc = metrics.coc
+  const dscr = metrics.dscr
+  const isCash = metrics.isCashDeal
+
+  let call = score >= 75 ? 'Buy' : score >= 50 ? 'Maybe' : 'Pass'
+  if (cf < 0) call = 'Pass'
+  else if (!isCash && dscr !== null && dscr < 1.0 && call === 'Buy') call = 'Maybe'
+
+  const strength =
+    cf >= 300 ? `strong cash flow at ${fmt(cf)}/mo`
+    : cf >= 100 ? `positive cash flow of ${fmt(cf)}/mo`
+    : coc >= 8 ? `a healthy ${coc.toFixed(1)}% cash-on-cash return`
+    : cf >= 0 ? `it stays cash-flow positive`
+    : `a low entry price relative to rent`
+
+  let concern
+  if (cf < 0) concern = `it loses ${fmt(Math.abs(cf))}/mo at these numbers`
+  else if (!isCash && dscr !== null && dscr < 1.25)
+    concern = `the DSCR of ${dscr.toFixed(2)} is under the 1.25 most lenders want, so financing may be tight`
+  else if (coc < 5) concern = `the ${coc.toFixed(1)}% cash-on-cash return is on the thin side`
+  else if (metrics.capRate < 5) concern = `the ${metrics.capRate.toFixed(1)}% cap rate is below what many investors target`
+  else concern = `margins are workable but not generous — leave room for repairs and vacancy`
+
+  const fix =
+    call === 'Pass'
+      ? ` A lower purchase price or higher rent is what would turn this around.`
+      : call === 'Maybe'
+      ? ` Negotiating the price down or putting more down would clean it up.`
+      : ``
+
+  const verdict = `Built on ${strength}. The thing to watch: ${concern}.${fix}`
+  return { call, verdict, source: 'template' }
+}
+
+const CALL_STYLE = {
+  Buy:   { color: '#1a7a4a', bg: '#eaf3de', emoji: '🟢' },
+  Maybe: { color: '#854f0b', bg: '#faeeda', emoji: '🟡' },
+  Pass:  { color: '#a32d2d', bg: '#fcebeb', emoji: '🔴' },
+}
+
+function GutCheck({ metrics, score, fields, signedIn }) {
+  const base = templateVerdict(metrics, score)
+  const [ai, setAi] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!signedIn || !base) { setAi(null); return }
+    let cancelled = false
+    setLoading(true)
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            metrics: { ...metrics, __score: score },
+            fields: { address: fields.address, rent: fields.rent, downPct: fields.downPct },
+          }),
+        })
+        const data = await r.json()
+        if (!cancelled && data && !data.fallback && data.verdict) {
+          setAi({ call: data.call, verdict: data.verdict })
+        }
+      } catch {
+        /* stay on template */
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }, 700)
+    return () => { cancelled = true; clearTimeout(t) }
+  }, [signedIn, base && metrics.cashflow, metrics.capRate, metrics.coc, metrics.dscr, score, fields.rent, fields.downPct])
+
+  if (!base) return null
+  const shown = ai || base
+  const s = CALL_STYLE[shown.call] || CALL_STYLE.Maybe
+
+  return (
+    <div style={{ background: 'var(--surface)', border: '2px solid ' + s.color, borderRadius: 12, padding: '18px 20px', marginBottom: 18 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--text3)' }}>Investor Gut-Check</div>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: s.bg, color: s.color, padding: '3px 12px', borderRadius: 20, fontSize: 14, fontWeight: 800 }}>
+          {s.emoji} {shown.call}
+        </div>
+        {loading && <div style={{ fontSize: 11, color: 'var(--text3)' }}>refining…</div>}
+      </div>
+      <div style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6 }}>{shown.verdict}</div>
+
+      {!signedIn && (
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text2)' }}>
+          <strong style={{ color: '#1a5fa8' }}>Sign in free</strong> for the full broker-written read on this deal.
+        </div>
+      )}
+
+      <div style={{ marginTop: 12, fontSize: 10, color: 'var(--text3)', lineHeight: 1.5 }}>
+        Analysis of the numbers you entered — not personalized investment advice. Always do your own due diligence.
       </div>
     </div>
   )
@@ -536,7 +731,7 @@ const addCity = () => {
 }
 
 const handleSave = async () => {
-    if (!supaUser) { setShowSignup(true); return }
+    if (!user) return
   onSave(local)
   if (user) {
     await supabase.from('user_alert_criteria').upsert({
@@ -879,7 +1074,7 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
   <button
     onClick={async e => {
       e.stopPropagation()
-      await supabase.from('dismissed_deals').upsert({ user_id: supaUser.id, deal_id: deal.id }, { onConflict: 'user_id,deal_id' })
+      await supabase.from('dismissed_deals').upsert({ user_id: user.id, deal_id: deal.id }, { onConflict: 'user_id,deal_id' })
       setDismissedIds(prev => new Set([...prev, deal.id]))
     }}
     title="Dismiss this deal"
@@ -1323,6 +1518,13 @@ function DrawerItem({ icon, label, sub, badge, action, onClick, small, danger })
 }
 
 export default function App() {
+  // ── SHARED-LINK GATE: decode ?deal= synchronously so a visitor sees the card
+  // immediately, before auth resolves. Holds decoded fields, or null. ──────────
+  const [sharedView, setSharedView] = useState(() => {
+    const deal = new URLSearchParams(window.location.search).get('deal')
+    return deal ? decodeDeal(deal) : null
+  })
+
   const [supaUser, setSupaUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [dealAlerts, setDealAlerts] = useState([])
@@ -1337,6 +1539,8 @@ export default function App() {
   const [showDrawer, setShowDrawer] = useState(false)
 
   useEffect(() => {
+    // Skip all data loading + Realtime setup when rendering a shared deal card.
+    if (sharedView) { setAuthLoading(false); return }
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const user = session?.user ?? null
       setSupaUser(user)
@@ -1441,6 +1645,14 @@ const channel = supabase
 
  const openUpgrade = (trigger='general') => { setUpgradeTrigger(trigger); setShowUpgrade(true) }
 
+  // Build a shareable link for the current analysis and copy it to clipboard.
+  const handleShare = () => {
+    const url = `${window.location.origin}${window.location.pathname}?deal=${encodeDeal(fields)}`
+    navigator.clipboard.writeText(url)
+      .then(() => showToast('Share link copied to clipboard!'))
+      .catch(() => window.prompt('Copy this link:', url))
+  }
+
   const startTrial = async () => {
     console.log('startTrial called, supaUser:', supaUser)
     const now = new Date().toISOString()
@@ -1484,7 +1696,7 @@ const markAllRead = async () => {
   }
 
   const handleSave = async () => {
-    if (!supaUser) return
+    if (!supaUser) { setShowSignup(true); return }
     
     if (!isPro && !trialActive && saved.length >= FREE_LIMIT) { openUpgrade('save'); return }
     const entry = { id: Date.now(), fields: { ...fields }, metrics }
@@ -1598,6 +1810,21 @@ const markAllRead = async () => {
   const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
   const totalUnread = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
   const unreadNotifCount = notifications.filter(n => !n.read).length
+
+  // ── SHARED DEAL VIEW: render the read-only card before anything else, so a
+  // link visitor never waits on auth and never triggers data loading. ─────────
+  if (sharedView) {
+    return (
+      <SharedDealCard
+        fields={{ ...DEFAULT_FIELDS, ...sharedView }}
+        onAnalyze={() => {
+          setFields({ ...DEFAULT_FIELDS, ...sharedView })
+          setSharedView(null)
+          window.history.replaceState({}, '', window.location.pathname)
+        }}
+      />
+    )
+  }
 
   if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:80}}>Loading...</div>
 
@@ -1925,6 +2152,10 @@ const markAllRead = async () => {
                   Free limit reached — <button onClick={() => openUpgrade('save')} style={{ background:'none', border:'none', color:'#1a5fa8', fontSize:11, cursor:'pointer', padding:0, fontFamily:'var(--font)', textDecoration:'underline' }}>upgrade to save more</button>
                 </div>
               )}
+              {/* ── SHARE ANALYSIS BUTTON ── */}
+              <button onClick={handleShare} aria-label="Share this analysis" style={{ width:'100%', padding:'8px 12px', marginTop:8, background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, cursor:'pointer', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', gap:6, fontFamily:'var(--font)' }}>
+                <i className="ti ti-share" /> Share analysis
+              </button>
             </div>
             <SectionLabel>Property details</SectionLabel>
             <Field label="Address / nickname" id="address" value={fields.address} onChange={set('address')} type="text" />
@@ -2139,6 +2370,14 @@ const markAllRead = async () => {
                   <div style={{ fontSize:12, color:'#1a5fa8' }}>A 0–100 score based on cap rate, cash flow, CoC return, and more.</div>
                 </div>
             }
+            {metrics.price > 0 && (
+              <GutCheck
+                metrics={metrics}
+                score={calcDealScore(metrics)?.score ?? 0}
+                fields={fields}
+                signedIn={!!supaUser}
+              />
+            )}
             <RentSlider rent={fields.rent || 1500} onChange={v => setSliderRent(v)} />
             <div style={{ background:'var(--navy)', borderRadius:12, padding:'18px 20px', marginBottom:18, display:'flex', alignItems:'flex-start', gap:14 }}>
               <div style={{ width:44, height:44, borderRadius:10, background:'rgba(77,168,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
