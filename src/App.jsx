@@ -1756,7 +1756,7 @@ const markAllRead = async () => {
             </button>
           )}
          {/* 🔔 Notification Bell */}
-{!isMobile && <div style={{ position: 'relative' }}>}
+{!isMobile && <div style={{ position: 'relative' }}>
   <button
     onClick={() => setShowNotifDropdown(v => !v)}
     style={{
