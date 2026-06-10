@@ -908,7 +908,6 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
 
   return (
     <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden' }}>
-      {/* Sub-tabs */}
       <div style={{ display:'flex', background:'var(--surface)', borderBottom:'1px solid var(--border)', padding:'0 24px', flexShrink:0 }}>
         {[
           { key:'properties', label:'My Properties', icon:'ti-briefcase' },
@@ -927,31 +926,32 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
         ))}
       </div>
 
-      {portfolioTab === 'alerts' ? (
-  !isPro ? (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, textAlign: 'center', gap: 16 }}>
-      <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(201,168,76,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <i className="ti ti-lock" style={{ fontSize: 32, color: '#C9A84C' }} />
-      </div>
-      <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Deal Alerts — Pro Feature</div>
-      <div style={{ fontSize: 14, color: 'var(--text2)', maxWidth: 300, lineHeight: 1.6 }}>
-        Get notified when properties matching your Buy Box hit the market. Set your criteria, we find the deals.
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 280 }}>
-        {['Automated deal matching', 'Custom Buy Box criteria', 'Zip code filtering', 'Email alerts'].map(f => (
-          <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)' }}>
-            <i className="ti ti-check" style={{ color: '#C9A84C', fontSize: 14 }} /> {f}
+      {portfolioTab === 'alerts' && !isPro && (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, textAlign: 'center', gap: 16 }}>
+          <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(201,168,76,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className="ti ti-lock" style={{ fontSize: 32, color: '#C9A84C' }} />
           </div>
-        ))}
-      </div>
-      <button onClick={onUpgrade} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #C9A84C, #b8943d)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)' }}>
-        Upgrade to Pro — $9.99/mo
-      </button>
-    </div>
-  ) : (
-    <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} prefs={prefs} onSavePrefs={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} user={user} />
-  )
-)}
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Deal Alerts — Pro Feature</div>
+          <div style={{ fontSize: 14, color: 'var(--text2)', maxWidth: 300, lineHeight: 1.6 }}>
+            Get notified when properties matching your Buy Box hit the market. Set your criteria, we find the deals.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 280 }}>
+            {['Automated deal matching', 'Custom Buy Box criteria', 'Zip code filtering', 'Email alerts'].map(f => (
+              <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)' }}>
+                <i className="ti ti-check" style={{ color: '#C9A84C', fontSize: 14 }} /> {f}
+              </div>
+            ))}
+          </div>
+          <button onClick={onUpgrade} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #C9A84C, #b8943d)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+            Upgrade to Pro — $9.99/mo
+          </button>
+        </div>
+      )}
+
+      {portfolioTab === 'alerts' && isPro && (
+        <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} prefs={prefs} onSavePrefs={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} user={user} />
+      )}
+
       {portfolioTab === 'properties' && (
         <div style={{ flex:1, overflowY:'auto', padding:24 }}>
           {saved.length === 0 && !isPro ? (
