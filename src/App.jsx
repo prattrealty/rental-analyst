@@ -1835,9 +1835,9 @@ const markAllRead = async () => {
   )}
 </div>
 
-          {!isMobile && <button onClick={() => supabase.auth.signOut()} aria-label="Sign out" title="Sign out" style={{ marginLeft:4, padding:'6px 10px', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:6, fontSize:16, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center' }}>
+           <button onClick={() => supabase.auth.signOut()} aria-label="Sign out" title="Sign out" style={{ marginLeft:4, padding:'6px 10px', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:6, fontSize:16, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center' }}>
             <i className="ti ti-logout" />
-          </button>}
+          </button>
         </div>
       </header>
       {/* ── EMAIL ALERT NUDGE BANNER ──────────────────────── */}
