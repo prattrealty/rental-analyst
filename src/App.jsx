@@ -138,7 +138,7 @@ function calcMetrics(f) {
   const equityMultiple = totalCashIn > 0 ? (totalReturn + totalCashIn) / totalCashIn : 0
 
   return {
-    price, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF,
+    price, rent, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF,
     capRate, coc, grossYield, breakeven, dscr, onePercentRule, onePercentPass, irr, equityMultiple,
     insurance: insuranceMonthly, maintenance, taxes: taxesMonthly, chartData,
     rentGrowth: rentGrowth * 100, appreciation: appreciation * 100,
