@@ -138,7 +138,7 @@ function calcMetrics(f) {
   const equityMultiple = totalCashIn > 0 ? (totalReturn + totalCashIn) / totalCashIn : 0
 
   return {
-    price, rent, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF,
+    price, down, closing, totalCashIn, loanAmt, monthlyMortgage, noi, cashflow, annualCF,
     capRate, coc, grossYield, breakeven, dscr, onePercentRule, onePercentPass, irr, equityMultiple,
     insurance: insuranceMonthly, maintenance, taxes: taxesMonthly, chartData,
     rentGrowth: rentGrowth * 100, appreciation: appreciation * 100,
@@ -355,7 +355,7 @@ const CALL_STYLE = {
   Pass:  { color: '#a32d2d', bg: '#fcebeb', emoji: '🔴' },
 }
 
-function GutCheck({ metrics, score, fields, signedIn }) {
+function GutCheck({ metrics, score, fields, signedIn, onSignIn }) {
   const base = templateVerdict(metrics, score)
   const [ai, setAi] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -404,7 +404,7 @@ function GutCheck({ metrics, score, fields, signedIn }) {
 
       {!signedIn && (
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--text2)' }}>
-          <strong style={{ color: '#1a5fa8' }}>Sign in free</strong> for the full broker-written read on this deal.
+          <span onClick={onSignIn} style={{ color: '#1a5fa8', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>Sign in free</span> for the full broker-written read on this deal.
         </div>
       )}
 
@@ -512,35 +512,71 @@ function WalkthroughBubble({ onDone }) {
   )
 }
 
-function SignupModal({ onClose, form, setForm, onSubmit, error }) {
+// mode: 'signup' | 'signin' | 'forgot'  ·  onSubmit receives the current mode
+function SignupModal({ onClose, form, setForm, onSubmit, error, mode, setMode, info }) {
+  const m = mode || 'signup'
+  const titles = {
+    signup: { kicker: 'Free account', heading: 'Save your analysis', sub: 'Create a free account to save properties and track your portfolio.' },
+    signin: { kicker: 'Welcome back', heading: 'Sign in', sub: 'Sign in to save deals and unlock the full broker-written verdict.' },
+    forgot: { kicker: 'Reset password', heading: 'Forgot your password?', sub: "Enter your email and we'll send you a reset link." },
+  }
+  const t = titles[m]
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
       <div onClick={e => e.stopPropagation()} style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:420, overflow:'hidden', boxShadow:'0 24px 60px rgba(0,0,0,0.3)' }}>
         <div style={{ background:'var(--navy)', padding:'28px 28px 24px', color:'#fff', position:'relative' }}>
           <button onClick={onClose} style={{ position:'absolute', top:16, right:16, background:'rgba(255,255,255,0.1)', border:'none', borderRadius:6, color:'#fff', cursor:'pointer', width:28, height:28, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}><i className="ti ti-x" /></button>
-          <div style={{ fontSize:11, letterSpacing:'1px', textTransform:'uppercase', color:'#4da8ff', marginBottom:6, fontWeight:600 }}>Free account</div>
-          <div style={{ fontSize:22, fontWeight:700, marginBottom:6 }}>Save your analysis</div>
-          <div style={{ fontSize:14, color:'rgba(255,255,255,0.65)' }}>Create a free account to save properties and track your portfolio.</div>
+          <div style={{ fontSize:11, letterSpacing:'1px', textTransform:'uppercase', color:'#4da8ff', marginBottom:6, fontWeight:600 }}>{t.kicker}</div>
+          <div style={{ fontSize:22, fontWeight:700, marginBottom:6 }}>{t.heading}</div>
+          <div style={{ fontSize:14, color:'rgba(255,255,255,0.65)' }}>{t.sub}</div>
         </div>
         <div style={{ padding:'24px 28px' }}>
-          <div style={{ marginBottom:12 }}>
-            <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>First name</label>
-            <input type="text" value={form.firstName} onChange={e => setForm(f => ({...f, firstName:e.target.value}))} placeholder="Scott" style={{ width:'100%' }} />
-          </div>
+          {m === 'signup' && (
+            <div style={{ marginBottom:12 }}>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>First name</label>
+              <input type="text" value={form.firstName} onChange={e => setForm(f => ({...f, firstName:e.target.value}))} placeholder="Scott" style={{ width:'100%' }} />
+            </div>
+          )}
           <div style={{ marginBottom:12 }}>
             <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Email</label>
             <input type="text" value={form.email} onChange={e => setForm(f => ({...f, email:e.target.value}))} placeholder="scott@example.com" style={{ width:'100%' }} />
           </div>
-          <div style={{ marginBottom:16 }}>
-            <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Password</label>
-            <input type="password" value={form.password} onChange={e => setForm(f => ({...f, password:e.target.value}))} placeholder="••••••••" style={{ width:'100%' }} />
-          </div>
-          <div style={{ display:'flex', alignItems:'flex-start', gap:8, marginBottom:16 }}>
-            <input type="checkbox" id="agreed" checked={form.agreed} onChange={e => setForm(f => ({...f, agreed:e.target.checked}))} style={{ marginTop:2, width:'auto' }} />
-            <label htmlFor="agreed" style={{ fontSize:12, color:'var(--text2)', lineHeight:1.4 }}>I agree to receive occasional updates from Rental Analyst. No spam, no selling your data.</label>
-          </div>
+          {m !== 'forgot' && (
+            <div style={{ marginBottom:16 }}>
+              <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Password</label>
+              <input type="password" value={form.password} onChange={e => setForm(f => ({...f, password:e.target.value}))} placeholder="••••••••" style={{ width:'100%' }} />
+            </div>
+          )}
+          {m === 'signup' && (
+            <div style={{ display:'flex', alignItems:'flex-start', gap:8, marginBottom:16 }}>
+              <input type="checkbox" id="agreed" checked={form.agreed} onChange={e => setForm(f => ({...f, agreed:e.target.checked}))} style={{ marginTop:2, width:'auto' }} />
+              <label htmlFor="agreed" style={{ fontSize:12, color:'var(--text2)', lineHeight:1.4 }}>I agree to receive occasional updates from Rental Analyst. No spam, no selling your data.</label>
+            </div>
+          )}
           {error && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{error}</div>}
-          <button onClick={onSubmit} style={{ width:'100%', padding:'13px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)' }}>Create Free Account</button>
+          {info && <div style={{ fontSize:12, color:'#1a7a4a', marginBottom:12 }}>{info}</div>}
+          <button onClick={() => onSubmit(m)} style={{ width:'100%', padding:'13px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)' }}>
+            {m === 'signup' ? 'Create Free Account' : m === 'signin' ? 'Sign In' : 'Send Reset Link'}
+          </button>
+
+          {m === 'signin' && (
+            <div onClick={() => setMode('forgot')} style={{ textAlign:'center', fontSize:12, color:'var(--text2)', marginTop:12, cursor:'pointer' }}>
+              Forgot your password?
+            </div>
+          )}
+
+          <div style={{ textAlign:'center', fontSize:13, color:'var(--text2)', marginTop:16, paddingTop:16, borderTop:'1px solid var(--border)' }}>
+            {m === 'signup' && (
+              <span>Already have an account? <span onClick={() => setMode('signin')} style={{ color:'#1a5fa8', fontWeight:600, cursor:'pointer' }}>Sign in</span></span>
+            )}
+            {m === 'signin' && (
+              <span>Need an account? <span onClick={() => setMode('signup')} style={{ color:'#1a5fa8', fontWeight:600, cursor:'pointer' }}>Create one free</span></span>
+            )}
+            {m === 'forgot' && (
+              <span onClick={() => setMode('signin')} style={{ color:'#1a5fa8', fontWeight:600, cursor:'pointer' }}>Back to sign in</span>
+            )}
+          </div>
+
           <div style={{ textAlign:'center', fontSize:11, color:'var(--text3)', marginTop:10 }}>
             We respect your privacy · No credit card required · <a href='/privacy.html' target='_blank' style={{ color:'#1a5fa8', textDecoration:'none' }}>Privacy Policy</a>
           </div>
@@ -1615,6 +1651,8 @@ const channel = supabase
   const [showUpgrade, setShowUpgrade] = useState(false)
   const [upgradeTrigger, setUpgradeTrigger] = useState('general')
   const [showSignup, setShowSignup] = useState(false)
+  const [authMode, setAuthMode] = useState('signup')  // 'signup' | 'signin' | 'forgot'
+  const [authInfo, setAuthInfo] = useState('')
   const [signupForm, setSignupForm] = useState({ firstName:'', email:'', password:'', agreed:false })
   const [signupError, setSignupError] = useState('')
   const [isPro, setIsPro] = useState(false)
@@ -1921,21 +1959,54 @@ const markAllRead = async () => {
       <a href="#main-content" className="skip-nav">Skip to main content</a>
       {showWalkthrough && <WalkthroughBubble onDone={() => { setShowWalkthrough(false); localStorage.setItem('ra_toured', '1') }} />}
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={() => setShowUpgrade(false)} trialStart={trialStart} onStartTrial={startTrial} />}
-      {showSignup && <SignupModal onClose={() => setShowSignup(false)} form={signupForm} setForm={setSignupForm} error={signupError} onSubmit={async () => {
-        if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
-        if (!signupForm.email.includes('@')) { setSignupError('Please enter a valid email.'); return }
-        if (signupForm.password.length < 6) { setSignupError('Password must be at least 6 characters.'); return }
-        if (!signupForm.agreed) { setSignupError('Please agree to receive updates.'); return }
-        setShowSignup(false); setSignupError('')
-        const { data, error: signupErr } = await supabase.auth.signUp({
-          email: signupForm.email,
-          password: signupForm.password,
-          options: { data: { first_name: signupForm.firstName } }
-        })
-        if (signupErr) { setSignupError(signupErr.message); setShowSignup(true); return }
-        setSupaUser(data.user)
-        showToast(`Welcome, ${signupForm.firstName}! Now save your first property.`)
-      }} />}
+      {showSignup && <SignupModal
+        onClose={() => { setShowSignup(false); setSignupError(''); setAuthInfo('') }}
+        form={signupForm} setForm={setSignupForm}
+        error={signupError} info={authInfo}
+        mode={authMode}
+        setMode={(mode) => { setAuthMode(mode); setSignupError(''); setAuthInfo('') }}
+        onSubmit={async (mode) => {
+          setSignupError(''); setAuthInfo('')
+          if (!signupForm.email.includes('@')) { setSignupError('Please enter a valid email.'); return }
+
+          // ── FORGOT PASSWORD ──
+          if (mode === 'forgot') {
+            const { error: resetErr } = await supabase.auth.resetPasswordForEmail(signupForm.email, {
+              redirectTo: 'https://rental-analyst.com'
+            })
+            if (resetErr) { setSignupError(resetErr.message); return }
+            setAuthInfo('Password reset email sent! Check your inbox.')
+            return
+          }
+
+          // ── SIGN IN ──
+          if (mode === 'signin') {
+            if (signupForm.password.length < 6) { setSignupError('Please enter your password.'); return }
+            const { data, error: signInErr } = await supabase.auth.signInWithPassword({
+              email: signupForm.email,
+              password: signupForm.password,
+            })
+            if (signInErr) { setSignupError(signInErr.message); return }
+            setShowSignup(false)
+            setSupaUser(data.user)
+            showToast('Welcome back!')
+            return
+          }
+
+          // ── SIGN UP ──
+          if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
+          if (signupForm.password.length < 6) { setSignupError('Password must be at least 6 characters.'); return }
+          if (!signupForm.agreed) { setSignupError('Please agree to receive updates.'); return }
+          const { data, error: signupErr } = await supabase.auth.signUp({
+            email: signupForm.email,
+            password: signupForm.password,
+            options: { data: { first_name: signupForm.firstName } }
+          })
+          if (signupErr) { setSignupError(signupErr.message); return }
+          setShowSignup(false)
+          setSupaUser(data.user)
+          showToast(`Welcome, ${signupForm.firstName}! Now save your first property.`)
+        }} />}
 
       <SideDrawer
         open={showDrawer}
@@ -2376,6 +2447,7 @@ const markAllRead = async () => {
                 score={calcDealScore(metrics)?.score ?? 0}
                 fields={fields}
                 signedIn={!!supaUser}
+                onSignIn={() => { setAuthMode('signin'); setSignupError(''); setAuthInfo(''); setShowSignup(true) }}
               />
             )}
             <RentSlider rent={fields.rent || 1500} onChange={v => setSliderRent(v)} />
