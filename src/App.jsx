@@ -3,6 +3,7 @@ import { jsPDF } from 'jspdf'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from './supabaseClient'
 import Auth from './Auth'
+import ResetPassword from './ResetPassword'
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js');
@@ -1563,6 +1564,7 @@ export default function App() {
 
   const [supaUser, setSupaUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [recovering, setRecovering] = useState(false)
   const [dealAlerts, setDealAlerts] = useState([])
   const [viewedDealIds, setViewedDealIds] = useState(new Set())
   const [userPrefs, setUserPrefs] = useState(null)
@@ -1573,7 +1575,17 @@ export default function App() {
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
   const [refCode] = useState(() => new URLSearchParams(window.location.search).get('ref') || null)
   const [showDrawer, setShowDrawer] = useState(false)
-
+// Catch password-recovery links. Supabase fires PASSWORD_RECOVERY when a user
+  // arrives via a reset email; we flip into the set-new-password screen.
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setRecovering(true)
+        setAuthLoading(false)
+      }
+    })
+    return () => listener?.subscription?.unsubscribe()
+  }, [])
   useEffect(() => {
     // Skip all data loading + Realtime setup when rendering a shared deal card.
     if (sharedView) { setAuthLoading(false); return }
@@ -1865,7 +1877,15 @@ const markAllRead = async () => {
   }
 
   if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:80}}>Loading...</div>
-
+if (recovering) {
+    return (
+      <ResetPassword onDone={() => {
+        setRecovering(false)
+        window.location.hash = ''
+        window.location.href = 'https://rental-analyst.com'
+      }} />
+    )
+  }
   const generatePDF = () => {
   const doc = new jsPDF()
   const score = calcDealScore(metrics)
