@@ -2034,7 +2034,7 @@ if (recovering) {
         user={supaUser}
         isPro={isPro}
         onUpgrade={() => { setShowDrawer(false); openUpgrade('drawer') }}
-        onSignOut={() => supabase.auth.signOut()}
+        onSignOut={async () => { await supabase.auth.signOut(); setSupaUser(null); setShowDrawer(false) }}
       />
       <header style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }} role="banner">
         <button
@@ -2153,7 +2153,7 @@ if (recovering) {
   )}
 </div>}
 
-           <button onClick={() => supabase.auth.signOut()} aria-label="Sign out" title="Sign out" style={{ marginLeft:4, padding:'6px 10px', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:6, fontSize:16, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center' }}>
+           <button onClick={async () => { await supabase.auth.signOut(); setSupaUser(null) }} aria-label="Sign out" title="Sign out" style={{ marginLeft:4, padding:'6px 10px', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:6, fontSize:16, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center' }}>
             <i className="ti ti-logout" />
           </button>
         </div>
