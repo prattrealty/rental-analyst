@@ -1292,7 +1292,7 @@ function ReferralStats({ userEmail }) {
     </div>
   )
 }
-function SideDrawer({ open, onClose, user, isPro, onUpgrade, onSignOut }) {
+function SideDrawer({ open, onClose, user, isPro, onUpgrade, onSignOut, onSignIn }) {
   const [glossaryOpen, setGlossaryOpen] = useState(false)
 
   const glossaryTerms = [
@@ -1477,7 +1477,11 @@ function SideDrawer({ open, onClose, user, isPro, onUpgrade, onSignOut }) {
 
         {/* SETTINGS */}
         <DrawerSection label="Settings" icon="ti-settings">
+          {user ? (
           <DrawerItem icon="ti-logout" label="Sign Out" onClick={onSignOut} danger />
+        ) : (
+          <DrawerItem icon="ti-user" label="Sign In" onClick={onSignIn} />
+        )}
         </DrawerSection>
 
         <div style={{ padding: '12px 20px 20px', marginTop: 'auto' }}>
@@ -2035,6 +2039,7 @@ if (recovering) {
         isPro={isPro}
         onUpgrade={() => { setShowDrawer(false); openUpgrade('drawer') }}
         onSignOut={async () => { await supabase.auth.signOut(); setSupaUser(null); setShowDrawer(false) }}
+        onSignIn={() => { setAuthMode('signin'); setSignupError(''); setAuthInfo(''); setShowSignup(true); setShowDrawer(false) }}
       />
       <header style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }} role="banner">
         <button
