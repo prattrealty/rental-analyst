@@ -11,8 +11,8 @@
 //   RENTCAST_API_KEY (or VITE_RENTCAST_API_KEY)
 //   VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY   (for verifying signed-in users)
 
-const ANON_RATE_LIMIT = 3   // logged-out: a few free tries per hour, then nudged to sign up
-const USER_RATE_LIMIT = 30  // signed-in: comfortable working limit
+const ANON_RATE_LIMIT = 10  // logged-out: ~5 properties (2 calls each) to try before signing up
+const USER_RATE_LIMIT = 60  // signed-in: ~30 properties/hour, comfortable working headroom
 
 // Allowed origins that may call this endpoint from a browser.
 const ALLOWED_ORIGINS = [
