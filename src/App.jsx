@@ -133,7 +133,7 @@ function calcMetrics(f) {
       guess = next
     }
     irr = guess * 100
-  } catch(e) { irr = 0 }
+  } catch (e) { irr = 0 }
 
   const totalReturn = annualCashFlows.slice(1).reduce((s, v) => s + v, 0)
   const equityMultiple = totalCashIn > 0 ? (totalReturn + totalCashIn) / totalCashIn : 0
@@ -176,8 +176,8 @@ function calcDealScore(metrics) {
   const grade = score >= 75
     ? { label: 'Strong Deal', color: '#1a7a4a', bg: '#eaf3de', emoji: '🟢' }
     : score >= 50
-    ? { label: 'Average Deal', color: '#854f0b', bg: '#faeeda', emoji: '🟡' }
-    : { label: 'Below Market', color: '#a32d2d', bg: '#fcebeb', emoji: '🔴' }
+      ? { label: 'Average Deal', color: '#854f0b', bg: '#faeeda', emoji: '🟡' }
+      : { label: 'Below Market', color: '#a32d2d', bg: '#fcebeb', emoji: '🔴' }
 
   return { score: Math.min(score, 100), breakdown, grade }
 }
@@ -209,7 +209,7 @@ function DealScoreCard({ metrics }) {
           <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 4, maxWidth: 220 }}>
             {score >= 75 ? 'Strong fundamentals — this deal pencils out well.'
               : score >= 50 ? 'Decent deal with room to negotiate or optimize.'
-              : 'Proceed with caution — numbers are tight for this market.'}
+                : 'Proceed with caution — numbers are tight for this market.'}
           </div>
           <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>Based on property fundamentals — financing-independent</div>
         </div>
@@ -326,10 +326,10 @@ function templateVerdict(metrics, score) {
 
   const strength =
     cf >= 300 ? `strong cash flow at ${fmt(cf)}/mo`
-    : cf >= 100 ? `positive cash flow of ${fmt(cf)}/mo`
-    : coc >= 8 ? `a healthy ${coc.toFixed(1)}% cash-on-cash return`
-    : cf >= 0 ? `it stays cash-flow positive`
-    : `a low entry price relative to rent`
+      : cf >= 100 ? `positive cash flow of ${fmt(cf)}/mo`
+        : coc >= 8 ? `a healthy ${coc.toFixed(1)}% cash-on-cash return`
+          : cf >= 0 ? `it stays cash-flow positive`
+            : `a low entry price relative to rent`
 
   let concern
   if (cf < 0) concern = `it loses ${fmt(Math.abs(cf))}/mo at these numbers`
@@ -343,17 +343,17 @@ function templateVerdict(metrics, score) {
     call === 'Pass'
       ? ` A lower purchase price or higher rent is what would turn this around.`
       : call === 'Maybe'
-      ? ` Negotiating the price down or putting more down would clean it up.`
-      : ``
+        ? ` Negotiating the price down or putting more down would clean it up.`
+        : ``
 
   const verdict = `Built on ${strength}. The thing to watch: ${concern}.${fix}`
   return { call, verdict, source: 'template' }
 }
 
 const CALL_STYLE = {
-  Buy:   { color: '#1a7a4a', bg: '#eaf3de', emoji: '🟢' },
+  Buy: { color: '#1a7a4a', bg: '#eaf3de', emoji: '🟢' },
   Maybe: { color: '#854f0b', bg: '#faeeda', emoji: '🟡' },
-  Pass:  { color: '#a32d2d', bg: '#fcebeb', emoji: '🔴' },
+  Pass: { color: '#a32d2d', bg: '#fcebeb', emoji: '🔴' },
 }
 
 function GutCheck({ metrics, score, fields, signedIn, onSignIn }) {
@@ -367,9 +367,13 @@ function GutCheck({ metrics, score, fields, signedIn, onSignIn }) {
     setLoading(true)
     const t = setTimeout(async () => {
       try {
+        const { data: { session } } = await supabase.auth.getSession()
         const r = await fetch('/api/analyze', {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: {
+            'content-type': 'application/json',
+            ...(session?.access_token ? { authorization: `Bearer ${session.access_token}` } : {}),
+          },
           body: JSON.stringify({
             metrics: { ...metrics, __score: score },
             fields: { address: fields.address, rent: fields.rent, downPct: fields.downPct },
@@ -523,63 +527,63 @@ function SignupModal({ onClose, form, setForm, onSubmit, error, mode, setMode, i
   }
   const t = titles[m]
   return (
-    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background:'var(--surface)', borderRadius:16, width:'100%', maxWidth:420, overflow:'hidden', boxShadow:'0 24px 60px rgba(0,0,0,0.3)' }}>
-        <div style={{ background:'var(--navy)', padding:'28px 28px 24px', color:'#fff', position:'relative' }}>
-          <button onClick={onClose} style={{ position:'absolute', top:16, right:16, background:'rgba(255,255,255,0.1)', border:'none', borderRadius:6, color:'#fff', cursor:'pointer', width:28, height:28, fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}><i className="ti ti-x" /></button>
-          <div style={{ fontSize:11, letterSpacing:'1px', textTransform:'uppercase', color:'#4da8ff', marginBottom:6, fontWeight:600 }}>{t.kicker}</div>
-          <div style={{ fontSize:22, fontWeight:700, marginBottom:6 }}>{t.heading}</div>
-          <div style={{ fontSize:14, color:'rgba(255,255,255,0.65)' }}>{t.sub}</div>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: 'var(--surface)', borderRadius: 16, width: '100%', maxWidth: 420, overflow: 'hidden', boxShadow: '0 24px 60px rgba(0,0,0,0.3)' }}>
+        <div style={{ background: 'var(--navy)', padding: '28px 28px 24px', color: '#fff', position: 'relative' }}>
+          <button onClick={onClose} style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: 6, color: '#fff', cursor: 'pointer', width: 28, height: 28, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className="ti ti-x" /></button>
+          <div style={{ fontSize: 11, letterSpacing: '1px', textTransform: 'uppercase', color: '#4da8ff', marginBottom: 6, fontWeight: 600 }}>{t.kicker}</div>
+          <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 6 }}>{t.heading}</div>
+          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.65)' }}>{t.sub}</div>
         </div>
-        <div style={{ padding:'24px 28px' }}>
+        <div style={{ padding: '24px 28px' }}>
           {m === 'signup' && (
-            <div style={{ marginBottom:12 }}>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>First name</label>
-              <input type="text" value={form.firstName} onChange={e => setForm(f => ({...f, firstName:e.target.value}))} placeholder="Scott" style={{ width:'100%' }} />
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>First name</label>
+              <input type="text" value={form.firstName} onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))} placeholder="Scott" style={{ width: '100%' }} />
             </div>
           )}
-          <div style={{ marginBottom:12 }}>
-            <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Email</label>
-            <input type="text" value={form.email} onChange={e => setForm(f => ({...f, email:e.target.value}))} placeholder="scott@example.com" style={{ width:'100%' }} />
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Email</label>
+            <input type="text" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="scott@example.com" style={{ width: '100%' }} />
           </div>
           {m !== 'forgot' && (
-            <div style={{ marginBottom:16 }}>
-              <label style={{ display:'block', fontSize:11, fontWeight:600, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Password</label>
-              <input type="password" value={form.password} onChange={e => setForm(f => ({...f, password:e.target.value}))} placeholder="••••••••" style={{ width:'100%' }} />
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Password</label>
+              <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder="••••••••" style={{ width: '100%' }} />
             </div>
           )}
           {m === 'signup' && (
-            <div style={{ display:'flex', alignItems:'flex-start', gap:8, marginBottom:16 }}>
-              <input type="checkbox" id="agreed" checked={form.agreed} onChange={e => setForm(f => ({...f, agreed:e.target.checked}))} style={{ marginTop:2, width:'auto' }} />
-              <label htmlFor="agreed" style={{ fontSize:12, color:'var(--text2)', lineHeight:1.4 }}>I agree to receive occasional updates from Rental Analyst. No spam, no selling your data.</label>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 16 }}>
+              <input type="checkbox" id="agreed" checked={form.agreed} onChange={e => setForm(f => ({ ...f, agreed: e.target.checked }))} style={{ marginTop: 2, width: 'auto' }} />
+              <label htmlFor="agreed" style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.4 }}>I agree to receive occasional updates from Rental Analyst. No spam, no selling your data.</label>
             </div>
           )}
-          {error && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{error}</div>}
-          {info && <div style={{ fontSize:12, color:'#1a7a4a', marginBottom:12 }}>{info}</div>}
-          <button onClick={() => onSubmit(m)} style={{ width:'100%', padding:'13px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)' }}>
+          {error && <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 12 }}>{error}</div>}
+          {info && <div style={{ fontSize: 12, color: '#1a7a4a', marginBottom: 12 }}>{info}</div>}
+          <button onClick={() => onSubmit(m)} style={{ width: '100%', padding: '13px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>
             {m === 'signup' ? 'Create Free Account' : m === 'signin' ? 'Sign In' : 'Send Reset Link'}
           </button>
 
           {m === 'signin' && (
-            <div onClick={() => setMode('forgot')} style={{ textAlign:'center', fontSize:12, color:'var(--text2)', marginTop:12, cursor:'pointer' }}>
+            <div onClick={() => setMode('forgot')} style={{ textAlign: 'center', fontSize: 12, color: 'var(--text2)', marginTop: 12, cursor: 'pointer' }}>
               Forgot your password?
             </div>
           )}
 
-          <div style={{ textAlign:'center', fontSize:13, color:'var(--text2)', marginTop:16, paddingTop:16, borderTop:'1px solid var(--border)' }}>
+          <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text2)', marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
             {m === 'signup' && (
-              <span>Already have an account? <span onClick={() => setMode('signin')} style={{ color:'#1a5fa8', fontWeight:600, cursor:'pointer' }}>Sign in</span></span>
+              <span>Already have an account? <span onClick={() => setMode('signin')} style={{ color: '#1a5fa8', fontWeight: 600, cursor: 'pointer' }}>Sign in</span></span>
             )}
             {m === 'signin' && (
-              <span>Need an account? <span onClick={() => setMode('signup')} style={{ color:'#1a5fa8', fontWeight:600, cursor:'pointer' }}>Create one free</span></span>
+              <span>Need an account? <span onClick={() => setMode('signup')} style={{ color: '#1a5fa8', fontWeight: 600, cursor: 'pointer' }}>Create one free</span></span>
             )}
             {m === 'forgot' && (
-              <span onClick={() => setMode('signin')} style={{ color:'#1a5fa8', fontWeight:600, cursor:'pointer' }}>Back to sign in</span>
+              <span onClick={() => setMode('signin')} style={{ color: '#1a5fa8', fontWeight: 600, cursor: 'pointer' }}>Back to sign in</span>
             )}
           </div>
 
-          <div style={{ textAlign:'center', fontSize:11, color:'var(--text3)', marginTop:10 }}>
-            We respect your privacy · No credit card required · <a href='/privacy.html' target='_blank' style={{ color:'#1a5fa8', textDecoration:'none' }}>Privacy Policy</a>
+          <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text3)', marginTop: 10 }}>
+            We respect your privacy · No credit card required · <a href='/privacy.html' target='_blank' style={{ color: '#1a5fa8', textDecoration: 'none' }}>Privacy Policy</a>
           </div>
         </div>
       </div>
@@ -641,7 +645,7 @@ function UpgradeModal({ onClose, trigger, onUpgrade, trialStart, onStartTrial })
             ))}
           </div>
         </div>
-      <div style={{ padding: '0 28px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ padding: '0 28px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {!trialStart && <button onClick={() => { console.log('button clicked'); onStartTrial && onStartTrial(); }} style={{ width: '100%', padding: '13px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>🎉 Try Free for 7 Days</button>}
           <button onClick={handleStripeCheckout} style={{ width: '100%', padding: '13px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Start Pro — ${PRO_PRICE}/month</button>
           <button onClick={onClose} style={{ width: '100%', padding: '10px', background: 'none', color: 'var(--text2)', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font)' }}>Continue with free plan</button>
@@ -670,120 +674,120 @@ function ProFeatureBlur({ label, icon, onUpgrade }) {
 
 function CapBadge({ capRate }) {
   if (capRate <= 0) return null
-  if (capRate >= 8) return <span style={badge('#eaf3de','#3b6d11')}><i className="ti ti-trending-up" /> Strong deal</span>
-  if (capRate >= 5) return <span style={badge('#faeeda','#854f0b')}><i className="ti ti-minus" /> Average</span>
-  return <span style={badge('#fcebeb','#a32d2d')}><i className="ti ti-trending-down" /> Below market</span>
+  if (capRate >= 8) return <span style={badge('#eaf3de', '#3b6d11')}><i className="ti ti-trending-up" /> Strong deal</span>
+  if (capRate >= 5) return <span style={badge('#faeeda', '#854f0b')}><i className="ti ti-minus" /> Average</span>
+  return <span style={badge('#fcebeb', '#a32d2d')}><i className="ti ti-trending-down" /> Below market</span>
 }
-const badge = (bg,color) => ({ display:'inline-flex', alignItems:'center', gap:4, padding:'2px 8px', borderRadius:4, fontSize:11, fontWeight:500, background:bg, color })
+const badge = (bg, color) => ({ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: bg, color })
 
 function MetricCard({ label, value, sub, valueStyle, badge: b }) {
   return (
-    <div style={{ flex:1, minWidth:110, padding:'14px 18px', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', gap:2 }}>
-      <div style={{ fontSize:11, color:'var(--text2)', lineHeight:1.3 }}>{label}</div>
-      <div style={{ fontSize:22, fontWeight:600, letterSpacing:'-0.5px', ...valueStyle }}>{value}</div>
-      {b}{sub && <div style={{ fontSize:11, color:'var(--text3)' }}>{sub}</div>}
+    <div style={{ flex: 1, minWidth: 110, padding: '14px 18px', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.3 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.5px', ...valueStyle }}>{value}</div>
+      {b}{sub && <div style={{ fontSize: 11, color: 'var(--text3)' }}>{sub}</div>}
     </div>
   )
 }
 
-function Field({ label, id, value, onChange, prefix, suffix, type='number' }) {
+function Field({ label, id, value, onChange, prefix, suffix, type = 'number' }) {
   const inputId = `field-${id}`
   return (
-    <div style={{ marginBottom:12 }}>
-      <label htmlFor={inputId} style={{ display:'block', fontSize:12, fontWeight:500, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>{label}</label>
-      <div style={{ position:'relative' }}>
-        {prefix && <span aria-hidden="true" style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>{prefix}</span>}
-        <input type={type} id={inputId} name={inputId} value={value} onChange={e => onChange(e.target.value)} onFocus={e => e.target.select()} aria-label={label} style={{ paddingLeft:prefix?18:10, paddingRight:suffix?28:10 }} />
-        {suffix && <span aria-hidden="true" style={{ position:'absolute', right:9, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--text3)', pointerEvents:'none' }}>{suffix}</span>}
+    <div style={{ marginBottom: 12 }}>
+      <label htmlFor={inputId} style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--text2)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        {prefix && <span aria-hidden="true" style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'var(--text3)', pointerEvents: 'none' }}>{prefix}</span>}
+        <input type={type} id={inputId} name={inputId} value={value} onChange={e => onChange(e.target.value)} onFocus={e => e.target.select()} aria-label={label} style={{ paddingLeft: prefix ? 18 : 10, paddingRight: suffix ? 28 : 10 }} />
+        {suffix && <span aria-hidden="true" style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--text3)', pointerEvents: 'none' }}>{suffix}</span>}
       </div>
     </div>
   )
 }
 
 function FieldRow({ children }) {
-  return <div style={{ display:'flex', gap:8 }}>{React.Children.map(children, c => <div style={{ flex:1 }}>{c}</div>)}</div>
+  return <div style={{ display: 'flex', gap: 8 }}>{React.Children.map(children, c => <div style={{ flex: 1 }}>{c}</div>)}</div>
 }
 
 function SectionLabel({ icon, children }) {
   return (
-    <div style={{ fontSize:10, fontWeight:600, color:'var(--text3)', letterSpacing:'1px', textTransform:'uppercase', marginBottom:10, marginTop:4, display:'flex', alignItems:'center', gap:5 }}>
-      {icon && <i className={`ti ti-${icon}`} style={{ fontSize:13 }} />}{children}
+    <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: 10, marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+      {icon && <i className={`ti ti-${icon}`} style={{ fontSize: 13 }} />}{children}
     </div>
   )
 }
 
-function Divider() { return <hr style={{ border:'none', borderTop:'1px solid var(--border)', margin:'14px 0' }} /> }
+function Divider() { return <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '14px 0' }} /> }
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background:'var(--surface)', border:'1px solid var(--border-strong)', borderRadius:8, padding:'10px 14px', fontSize:13 }}>
-      <div style={{ fontWeight:600, marginBottom:6, color:'var(--text)' }}>{label}</div>
-      {payload.map(p => <div key={p.name} style={{ color:p.color, display:'flex', justifyContent:'space-between', gap:16 }}><span>{p.name}</span><span style={{ fontWeight:500 }}>{p.name==='Equity ($K)' ? `$${p.value}K` : fmt(p.value)}</span></div>)}
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '10px 14px', fontSize: 13 }}>
+      <div style={{ fontWeight: 600, marginBottom: 6, color: 'var(--text)' }}>{label}</div>
+      {payload.map(p => <div key={p.name} style={{ color: p.color, display: 'flex', justifyContent: 'space-between', gap: 16 }}><span>{p.name}</span><span style={{ fontWeight: 500 }}>{p.name === 'Equity ($K)' ? `$${p.value}K` : fmt(p.value)}</span></div>)}
     </div>
   )
 }
 
 // ── DEAL ALERTS COMPONENT ──────────────────────────────────────────────────
 function BuyBoxPanel({ prefs, onSave, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency, user }) {
- const [local, setLocal] = useState({ ...prefs })
-const [saved, setSaved] = useState(false)
-const [markets, setMarkets] = useState([])
-const [zips, setZips] = useState([])
-const [zipInput, setZipInput] = useState('')
-const [cityInput, setCityInput] = useState('')
-const set = (key, val) => setLocal(p => ({ ...p, [key]: val }))
-// Add this right after your existing useState declarations in BuyBoxPanel
-useEffect(() => {
-  if (!user) return
-  const loadMarkets = async () => {
-    const { data } = await supabase
-      .from('user_alert_criteria')
-      .select('markets')
-      .eq('user_id', user.id)
-      .maybeSingle()
-    if (data?.markets && Array.isArray(data.markets)) {
-  setMarkets(data.markets)
-}
-if (data?.zips && Array.isArray(data.zips)) {
-  setZips(data.zips)
-}
-  }
-  loadMarkets()
-}, [user])
-
-const PRESET_MARKETS = [
-  'Atlanta, GA', 'Chattanooga, TN', 'Knoxville, TN',
-  'Asheville, NC', 'Nashville, TN', 'Birmingham, AL'
-]
-
-const toggleMarket = (m) => setMarkets(prev =>
-  prev.includes(m) ? prev.filter(v => v !== m) : [...prev, m]
-)
-
-const addCity = () => {
-  const city = cityInput.trim()
-  if (city && !markets.includes(city)) setMarkets(prev => [...prev, city])
-  setCityInput('')
-}
-
-const handleSave = async () => {
+  const [local, setLocal] = useState({ ...prefs })
+  const [saved, setSaved] = useState(false)
+  const [markets, setMarkets] = useState([])
+  const [zips, setZips] = useState([])
+  const [zipInput, setZipInput] = useState('')
+  const [cityInput, setCityInput] = useState('')
+  const set = (key, val) => setLocal(p => ({ ...p, [key]: val }))
+  // Add this right after your existing useState declarations in BuyBoxPanel
+  useEffect(() => {
     if (!user) return
-  onSave(local)
-  if (user) {
-    await supabase.from('user_alert_criteria').upsert({
-  user_id: user.id,
-  markets,
-  zips,
-  min_coc: local.min_coc ?? 8,
-  max_price: local.max_price ?? 300000,
-  property_types: local.property_type ? [local.property_type] : ['Single Family'],
-  email_alerts: emailAlertsEnabled
-}, { onConflict: 'user_id' })
+    const loadMarkets = async () => {
+      const { data } = await supabase
+        .from('user_alert_criteria')
+        .select('markets')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (data?.markets && Array.isArray(data.markets)) {
+        setMarkets(data.markets)
+      }
+      if (data?.zips && Array.isArray(data.zips)) {
+        setZips(data.zips)
+      }
+    }
+    loadMarkets()
+  }, [user])
+
+  const PRESET_MARKETS = [
+    'Atlanta, GA', 'Chattanooga, TN', 'Knoxville, TN',
+    'Asheville, NC', 'Nashville, TN', 'Birmingham, AL'
+  ]
+
+  const toggleMarket = (m) => setMarkets(prev =>
+    prev.includes(m) ? prev.filter(v => v !== m) : [...prev, m]
+  )
+
+  const addCity = () => {
+    const city = cityInput.trim()
+    if (city && !markets.includes(city)) setMarkets(prev => [...prev, city])
+    setCityInput('')
   }
-  setSaved(true)
-  setTimeout(() => setSaved(false), 2000)
-}
+
+  const handleSave = async () => {
+    if (!user) return
+    onSave(local)
+    if (user) {
+      await supabase.from('user_alert_criteria').upsert({
+        user_id: user.id,
+        markets,
+        zips,
+        min_coc: local.min_coc ?? 8,
+        max_price: local.max_price ?? 300000,
+        property_types: local.property_type ? [local.property_type] : ['Single Family'],
+        email_alerts: emailAlertsEnabled
+      }, { onConflict: 'user_id' })
+    }
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
 
   return (
     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px', marginBottom: 20 }}>
@@ -800,79 +804,79 @@ const handleSave = async () => {
         </button>
       </div>
       {/* MARKETS TO WATCH */}
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', display: 'block', marginBottom: 8 }}>MARKETS TO WATCH</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-              {PRESET_MARKETS.map(m => (
-                <button key={m} onClick={() => toggleMarket(m)} style={{
-                  padding: '3px 10px', borderRadius: 20, border: '1.5px solid',
-                  borderColor: markets.includes(m) ? '#1a5fa8' : 'var(--border)',
-                  background: markets.includes(m) ? '#e8f0fb' : 'transparent',
-                  color: markets.includes(m) ? '#1a5fa8' : 'var(--text2)',
-                  cursor: 'pointer', fontSize: 12, fontWeight: 500
-                }}>{m}</button>
-              ))}
-              {markets.filter(m => !PRESET_MARKETS.includes(m)).map(m => (
-                <button key={m} onClick={() => toggleMarket(m)} style={{
-                  padding: '3px 10px', borderRadius: 20, border: '1.5px solid',
-                  borderColor: '#1a5fa8', background: '#e8f0fb',
-                  color: '#1a5fa8', cursor: 'pointer', fontSize: 12, fontWeight: 500
-                }}>{m} ×</button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-  <input
-    type="text"
-    placeholder="Add a city (e.g. Pensacola, FL)"
-    value={cityInput}
-    onChange={e => setCityInput(e.target.value)}
-    onKeyDown={e => e.key === 'Enter' && addCity()}
-    style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }}
-  />
-  <button onClick={addCity} style={{
-    padding: '6px 12px', borderRadius: 6, border: 'none',
-    background: '#1a5fa8', color: 'white', fontSize: 12, cursor: 'pointer'
-  }}>+ Add</button>
-</div>
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', display: 'block', marginBottom: 8 }}>MARKETS TO WATCH</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+          {PRESET_MARKETS.map(m => (
+            <button key={m} onClick={() => toggleMarket(m)} style={{
+              padding: '3px 10px', borderRadius: 20, border: '1.5px solid',
+              borderColor: markets.includes(m) ? '#1a5fa8' : 'var(--border)',
+              background: markets.includes(m) ? '#e8f0fb' : 'transparent',
+              color: markets.includes(m) ? '#1a5fa8' : 'var(--text2)',
+              cursor: 'pointer', fontSize: 12, fontWeight: 500
+            }}>{m}</button>
+          ))}
+          {markets.filter(m => !PRESET_MARKETS.includes(m)).map(m => (
+            <button key={m} onClick={() => toggleMarket(m)} style={{
+              padding: '3px 10px', borderRadius: 20, border: '1.5px solid',
+              borderColor: '#1a5fa8', background: '#e8f0fb',
+              color: '#1a5fa8', cursor: 'pointer', fontSize: 12, fontWeight: 500
+            }}>{m} ×</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            type="text"
+            placeholder="Add a city (e.g. Pensacola, FL)"
+            value={cityInput}
+            onChange={e => setCityInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addCity()}
+            style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }}
+          />
+          <button onClick={addCity} style={{
+            padding: '6px 12px', borderRadius: 6, border: 'none',
+            background: '#1a5fa8', color: 'white', fontSize: 12, cursor: 'pointer'
+          }}>+ Add</button>
+        </div>
 
-{/* ZIP CODE CHIPS */}
-<div style={{ marginTop: 12 }}>
-  <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', display: 'block', marginBottom: 8 }}>ZIP CODES TO WATCH</label>
-  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-    {zips.map(z => (
-      <button key={z} onClick={() => setZips(prev => prev.filter(v => v !== z))} style={{
-        padding: '3px 10px', borderRadius: 20, border: '1.5px solid #1a5fa8',
-        background: '#e8f0fb', color: '#1a5fa8',
-        cursor: 'pointer', fontSize: 12, fontWeight: 500
-      }}>{z} ×</button>
-    ))}
-  </div>
-  <div style={{ display: 'flex', gap: 6 }}>
-    <input
-      type="text"
-      placeholder="Add a zip (e.g. 30114)"
-      value={zipInput}
-      onChange={e => setZipInput(e.target.value)}
-      onKeyDown={e => {
-        if (e.key === 'Enter') {
-          const z = zipInput.trim()
-          if (z && !zips.includes(z)) setZips(prev => [...prev, z])
-          setZipInput('')
-        }
-      }}
-      style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }}
-    />
-    <button onClick={() => {
-      const z = zipInput.trim()
-      if (z && !zips.includes(z)) setZips(prev => [...prev, z])
-      setZipInput('')
-    }} style={{
-      padding: '6px 12px', borderRadius: 6, border: 'none',
-      background: '#1a5fa8', color: 'white', fontSize: 12, cursor: 'pointer'
-    }}>+ Add</button>
-  </div>
-</div>
+        {/* ZIP CODE CHIPS */}
+        <div style={{ marginTop: 12 }}>
+          <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', display: 'block', marginBottom: 8 }}>ZIP CODES TO WATCH</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+            {zips.map(z => (
+              <button key={z} onClick={() => setZips(prev => prev.filter(v => v !== z))} style={{
+                padding: '3px 10px', borderRadius: 20, border: '1.5px solid #1a5fa8',
+                background: '#e8f0fb', color: '#1a5fa8',
+                cursor: 'pointer', fontSize: 12, fontWeight: 500
+              }}>{z} ×</button>
+            ))}
           </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <input
+              type="text"
+              placeholder="Add a zip (e.g. 30114)"
+              value={zipInput}
+              onChange={e => setZipInput(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  const z = zipInput.trim()
+                  if (z && !zips.includes(z)) setZips(prev => [...prev, z])
+                  setZipInput('')
+                }
+              }}
+              style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', fontSize: 12, background: 'var(--surface)', color: 'var(--text)' }}
+            />
+            <button onClick={() => {
+              const z = zipInput.trim()
+              if (z && !zips.includes(z)) setZips(prev => [...prev, z])
+              setZipInput('')
+            }} style={{
+              padding: '6px 12px', borderRadius: 6, border: 'none',
+              background: '#1a5fa8', color: 'white', fontSize: 12, cursor: 'pointer'
+            }}>+ Add</button>
+          </div>
+        </div>
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 600, color: 'var(--text2)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -932,58 +936,58 @@ const handleSave = async () => {
         </div>
       </div>
       {/* ── EMAIL ALERTS TOGGLE ─────────────────────────── */}
-<div style={{ borderTop: '1px solid var(--border)', marginTop: 16, paddingTop: 16 }}>
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-    <div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-        <i className="ti ti-mail" style={{ fontSize: 14, color: '#1a5fa8' }} />
-        Email Alerts
-      </div>
-      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
-        Get notified when new deals match your buy box
-      </div>
-    </div>
-    {/* Toggle switch */}
-    <div
-      onClick={() => setEmailAlertsEnabled(v => !v)}
-      style={{
-        width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
-        background: emailAlertsEnabled ? '#1a5fa8' : 'var(--border)',
-        position: 'relative', transition: 'background 0.2s', flexShrink: 0
-      }}
-    >
-      <div style={{
-        position: 'absolute', top: 3,
-        left: emailAlertsEnabled ? 23 : 3,
-        width: 18, height: 18, borderRadius: '50%',
-        background: '#fff', transition: 'left 0.2s',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
-      }} />
-    </div>
-  </div>
+      <div style={{ borderTop: '1px solid var(--border)', marginTop: 16, paddingTop: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <i className="ti ti-mail" style={{ fontSize: 14, color: '#1a5fa8' }} />
+              Email Alerts
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+              Get notified when new deals match your buy box
+            </div>
+          </div>
+          {/* Toggle switch */}
+          <div
+            onClick={() => setEmailAlertsEnabled(v => !v)}
+            style={{
+              width: 44, height: 24, borderRadius: 12, cursor: 'pointer',
+              background: emailAlertsEnabled ? '#1a5fa8' : 'var(--border)',
+              position: 'relative', transition: 'background 0.2s', flexShrink: 0
+            }}
+          >
+            <div style={{
+              position: 'absolute', top: 3,
+              left: emailAlertsEnabled ? 23 : 3,
+              width: 18, height: 18, borderRadius: '50%',
+              background: '#fff', transition: 'left 0.2s',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+            }} />
+          </div>
+        </div>
 
-  {/* Frequency selector — only shown when alerts are on */}
-  {emailAlertsEnabled && (
-    <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-      {['instant', 'daily', 'weekly'].map(f => (
-        <button
-          key={f}
-          onClick={() => setAlertFrequency(f)}
-          style={{
-            flex: 1, padding: '5px 0', borderRadius: 6, fontSize: 11,
-            fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)',
-            border: `1px solid ${alertFrequency === f ? '#1a5fa8' : 'var(--border)'}`,
-            background: alertFrequency === f ? '#1a5fa8' : 'transparent',
-            color: alertFrequency === f ? '#fff' : 'var(--text2)',
-            textTransform: 'capitalize'
-          }}
-        >
-          {f}
-        </button>
-      ))}
-    </div>
-  )}
-</div>
+        {/* Frequency selector — only shown when alerts are on */}
+        {emailAlertsEnabled && (
+          <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            {['instant', 'daily', 'weekly'].map(f => (
+              <button
+                key={f}
+                onClick={() => setAlertFrequency(f)}
+                style={{
+                  flex: 1, padding: '5px 0', borderRadius: 6, fontSize: 11,
+                  fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)',
+                  border: `1px solid ${alertFrequency === f ? '#1a5fa8' : 'var(--border)'}`,
+                  background: alertFrequency === f ? '#1a5fa8' : 'transparent',
+                  color: alertFrequency === f ? '#fff' : 'var(--text2)',
+                  textTransform: 'capitalize'
+                }}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1017,7 +1021,7 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-     <BuyBoxPanel prefs={activePref} onSave={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} user={user} /> 
+      <BuyBoxPanel prefs={activePref} onSave={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} user={user} />
       {!hasSetPrefs && (
         <div style={{ background: '#f0f7ff', border: '1px solid #c0d8f0', borderRadius: 10, padding: '14px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="ti ti-info-circle" style={{ fontSize: 18, color: '#1a5fa8', flexShrink: 0 }} />
@@ -1096,29 +1100,29 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-  <button
-    onClick={e => {
-      e.stopPropagation()
-      const query = encodeURIComponent((deal.address || f.address || '') + ' zillow')
-      window.open('https://www.zillow.com/homes/' + encodeURIComponent(deal.address || f.address || '') + '_rb/', '_blank')
-    }}
-    style={{ padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
-    <i className="ti ti-external-link" style={{ fontSize: 13 }} /> Zillow
-  </button>
-  <button style={{ flex: 1, padding: '8px', background: grade.color, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-    <i className="ti ti-calculator" style={{ fontSize: 13 }} /> Load Full Analysis
-  </button>
-  <button
-    onClick={async e => {
-      e.stopPropagation()
-      await supabase.from('dismissed_deals').upsert({ user_id: user.id, deal_id: deal.id }, { onConflict: 'user_id,deal_id' })
-      setDismissedIds(prev => new Set([...prev, deal.id]))
-    }}
-    title="Dismiss this deal"
-    style={{ padding: '8px 10px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 14, cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center' }}>
-    <i className="ti ti-trash" />
-  </button>
-</div>
+                <button
+                  onClick={e => {
+                    e.stopPropagation()
+                    const query = encodeURIComponent((deal.address || f.address || '') + ' zillow')
+                    window.open('https://www.zillow.com/homes/' + encodeURIComponent(deal.address || f.address || '') + '_rb/', '_blank')
+                  }}
+                  style={{ padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text2)', whiteSpace: 'nowrap' }}>
+                  <i className="ti ti-external-link" style={{ fontSize: 13 }} /> Zillow
+                </button>
+                <button style={{ flex: 1, padding: '8px', background: grade.color, color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <i className="ti ti-calculator" style={{ fontSize: 13 }} /> Load Full Analysis
+                </button>
+                <button
+                  onClick={async e => {
+                    e.stopPropagation()
+                    await supabase.from('dismissed_deals').upsert({ user_id: user.id, deal_id: deal.id }, { onConflict: 'user_id,deal_id' })
+                    setDismissedIds(prev => new Set([...prev, deal.id]))
+                  }}
+                  title="Dismiss this deal"
+                  style={{ padding: '8px 10px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 14, cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center' }}>
+                  <i className="ti ti-trash" />
+                </button>
+              </div>
             </div>
           )
         })}
@@ -1131,27 +1135,27 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
 }
 
 // ── PORTFOLIO COMPONENT ────────────────────────────────────────────────────
-function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency, user}) {
+function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency, user }) {
   const [portfolioTab, setPortfolioTab] = useState('properties')
   const unreadCount = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
-  const totalCF = saved.reduce((s,p) => s + p.metrics.cashflow, 0)
-  const totalEquity = saved.reduce((s,p) => s + (p.metrics.chartData[4]?.equity||0), 0)
+  const totalCF = saved.reduce((s, p) => s + p.metrics.cashflow, 0)
+  const totalEquity = saved.reduce((s, p) => s + (p.metrics.chartData[4]?.equity || 0), 0)
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', flex:1, overflow:'hidden' }}>
-      <div style={{ display:'flex', background:'var(--surface)', borderBottom:'1px solid var(--border)', padding:'0 24px', flexShrink:0 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', background: 'var(--surface)', borderBottom: '1px solid var(--border)', padding: '0 24px', flexShrink: 0 }}>
         {[
-          { key:'properties', label:'My Properties', icon:'ti-briefcase' },
-          { key:'alerts', label:'Deal Alerts', icon:'ti-bell' },
+          { key: 'properties', label: 'My Properties', icon: 'ti-briefcase' },
+          { key: 'alerts', label: 'Deal Alerts', icon: 'ti-bell' },
         ].map(t => (
-          <button key={t.key} onClick={() => setPortfolioTab(t.key)} style={{ padding:'12px 16px', fontSize:13, fontWeight:500, cursor:'pointer', border:'none', borderBottom: portfolioTab===t.key ? '2px solid #1a5fa8' : '2px solid transparent', background:'transparent', color: portfolioTab===t.key ? '#1a5fa8' : 'var(--text2)', fontFamily:'var(--font)', display:'flex', alignItems:'center', gap:6, marginRight:4 }}>
-            <i className={`ti ${t.icon}`} style={{ fontSize:14 }} />
+          <button key={t.key} onClick={() => setPortfolioTab(t.key)} style={{ padding: '12px 16px', fontSize: 13, fontWeight: 500, cursor: 'pointer', border: 'none', borderBottom: portfolioTab === t.key ? '2px solid #1a5fa8' : '2px solid transparent', background: 'transparent', color: portfolioTab === t.key ? '#1a5fa8' : 'var(--text2)', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 6, marginRight: 4 }}>
+            <i className={`ti ${t.icon}`} style={{ fontSize: 14 }} />
             {t.label}
             {t.key === 'alerts' && unreadCount > 0 && (
-              <span style={{ background:'#a32d2d', color:'#fff', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:700 }}>{unreadCount}</span>
+              <span style={{ background: '#a32d2d', color: '#fff', borderRadius: 10, fontSize: 10, padding: '0 6px', fontWeight: 700 }}>{unreadCount}</span>
             )}
             {t.key === 'properties' && saved.length > 0 && (
-              <span style={{ background:'var(--border)', color:'var(--text2)', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:600 }}>{saved.length}</span>
+              <span style={{ background: 'var(--border)', color: 'var(--text2)', borderRadius: 10, fontSize: 10, padding: '0 6px', fontWeight: 600 }}>{saved.length}</span>
             )}
           </button>
         ))}
@@ -1184,59 +1188,59 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
       )}
 
       {portfolioTab === 'properties' && (
-        <div style={{ flex:1, overflowY:'auto', padding:24 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
           {saved.length === 0 && !isPro ? (
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'var(--text2)', padding:40 }}>
-              <i className="ti ti-briefcase" style={{ fontSize:48, color:'var(--text3)' }} />
-              <div style={{ fontSize:16, fontWeight:500, color:'var(--text)' }}>No saved properties yet</div>
-              <div style={{ fontSize:13 }}>Save up to {FREE_LIMIT} properties on the free plan.</div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--text2)', padding: 40 }}>
+              <i className="ti ti-briefcase" style={{ fontSize: 48, color: 'var(--text3)' }} />
+              <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)' }}>No saved properties yet</div>
+              <div style={{ fontSize: 13 }}>Save up to {FREE_LIMIT} properties on the free plan.</div>
             </div>
           ) : (
             <>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:12, marginBottom:24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12, marginBottom: 24 }}>
                 {[
-                  { label:'Properties', value:`${saved.length}${!isPro ? ` / ${FREE_LIMIT}` : ''}` },
-                  { label:'Total monthly CF', value:fmt(totalCF), color:totalCF>=0?'var(--green)':'var(--red)' },
-                  { label:'Portfolio equity (Yr 5)', value:`$${totalEquity}K` },
+                  { label: 'Properties', value: `${saved.length}${!isPro ? ` / ${FREE_LIMIT}` : ''}` },
+                  { label: 'Total monthly CF', value: fmt(totalCF), color: totalCF >= 0 ? 'var(--green)' : 'var(--red)' },
+                  { label: 'Portfolio equity (Yr 5)', value: `$${totalEquity}K` },
                 ].map(m => (
-                  <div key={m.label} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
-                    <div style={{ fontSize:11, color:'var(--text2)', marginBottom:4 }}>{m.label}</div>
-                    <div style={{ fontSize:22, fontWeight:600, color:m.color||'var(--text)' }}>{m.value}</div>
+                  <div key={m.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 4 }}>{m.label}</div>
+                    <div style={{ fontSize: 22, fontWeight: 600, color: m.color || 'var(--text)' }}>{m.value}</div>
                   </div>
                 ))}
               </div>
               {!isPro && (
-                <div style={{ background:'#f0f7ff', border:'1px solid #c0d8f0', borderRadius:10, padding:'14px 16px', marginBottom:18, display:'flex', alignItems:'center', gap:12 }}>
-                  <i className="ti ti-lock" style={{ fontSize:20, color:'#1a5fa8' }} />
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:13, fontWeight:500, color:'#0f2744' }}>Free plan: {saved.length}/{FREE_LIMIT} properties saved</div>
-                    <div style={{ fontSize:12, color:'#1a5fa8' }}>Upgrade to Pro for unlimited saves, PDF exports & full portfolio analytics.</div>
+                <div style={{ background: '#f0f7ff', border: '1px solid #c0d8f0', borderRadius: 10, padding: '14px 16px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <i className="ti ti-lock" style={{ fontSize: 20, color: '#1a5fa8' }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: '#0f2744' }}>Free plan: {saved.length}/{FREE_LIMIT} properties saved</div>
+                    <div style={{ fontSize: 12, color: '#1a5fa8' }}>Upgrade to Pro for unlimited saves, PDF exports & full portfolio analytics.</div>
                   </div>
-                  <button onClick={onUpgrade} style={{ padding:'7px 14px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)', whiteSpace:'nowrap' }}>Go Pro</button>
+                  <button onClick={onUpgrade} style={{ padding: '7px 14px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', whiteSpace: 'nowrap' }}>Go Pro</button>
                 </div>
               )}
-              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {saved.map(p => (
-                  <div key={p.id} onClick={() => { onLoadDeal({ fields: p.fields, metrics: p.metrics }) }} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:16, cursor:'pointer', transition:'box-shadow 0.2s' }}
-                  onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)'}
-                  onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
+                  <div key={p.id} onClick={() => { onLoadDeal({ fields: p.fields, metrics: p.metrics }) }} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 16, cursor: 'pointer', transition: 'box-shadow 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.1)'}
+                    onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                       <div>
-                        <div style={{ fontWeight:600, fontSize:15 }}>{p.fields.address||'Unnamed property'}</div>
-                        <div style={{ fontSize:12, color:'var(--text2)' }}>{fmt(p.fields.price)} · {p.fields.neighborhood}</div>
+                        <div style={{ fontWeight: 600, fontSize: 15 }}>{p.fields.address || 'Unnamed property'}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text2)' }}>{fmt(p.fields.price)} · {p.fields.neighborhood}</div>
                       </div>
-                      <button onClick={() => onDelete(p.id)} aria-label="Delete saved property" style={{ background:'none', border:'none', cursor:'pointer', color:'var(--text3)', fontSize:16 }}><i className="ti ti-trash" /></button>
+                      <button onClick={() => onDelete(p.id)} aria-label="Delete saved property" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text3)', fontSize: 16 }}><i className="ti ti-trash" /></button>
                     </div>
-                    <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
                       {[
-                        { label:'Cash flow', value:fmt(p.metrics.cashflow)+'/mo', pos:p.metrics.cashflow>=0 },
-                        { label:'Cap rate', value:fmtPct(p.metrics.capRate) },
-                        { label:'CoC return', value:fmtPct(p.metrics.coc), pos:p.metrics.coc>=0 },
-                        { label:'Gross yield', value:fmtPct(p.metrics.grossYield) },
+                        { label: 'Cash flow', value: fmt(p.metrics.cashflow) + '/mo', pos: p.metrics.cashflow >= 0 },
+                        { label: 'Cap rate', value: fmtPct(p.metrics.capRate) },
+                        { label: 'CoC return', value: fmtPct(p.metrics.coc), pos: p.metrics.coc >= 0 },
+                        { label: 'Gross yield', value: fmtPct(p.metrics.grossYield) },
                       ].map(m => (
                         <div key={m.label}>
-                          <div style={{ fontSize:11, color:'var(--text2)' }}>{m.label}</div>
-                          <div style={{ fontWeight:600, color:m.pos===false?'var(--red)':m.pos?'var(--green)':'var(--text)' }}>{m.value}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text2)' }}>{m.label}</div>
+                          <div style={{ fontWeight: 600, color: m.pos === false ? 'var(--red)' : m.pos ? 'var(--green)' : 'var(--text)' }}>{m.value}</div>
                         </div>
                       ))}
                     </div>
@@ -1244,9 +1248,9 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
                 ))}
               </div>
               {!isPro && (
-                <div style={{ marginTop:20 }}>
-                  <div style={{ fontSize:12, color:'var(--text3)', marginBottom:10, textTransform:'uppercase', letterSpacing:'0.5px', fontWeight:600 }}>Pro features preview</div>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                <div style={{ marginTop: 20 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>Pro features preview</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <ProFeatureBlur label="PDF Report Export" icon="ti-file-description" onUpgrade={onUpgrade} />
                     <ProFeatureBlur label="Rent Comp History" icon="ti-history" onUpgrade={onUpgrade} />
                   </div>
@@ -1261,15 +1265,15 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
 }
 
 const DEFAULT_FIELDS = {
-  address:'', zip:'', neighborhood:'',
-  price:0, downPct:25, closingPct:3, reno:0, renoFinanced:false,
-  rent:0, vacancyPct:5, rentRangeLow:0, rentRangeHigh:0,
-  taxes:0, taxesYearly:0,
-  insurance:0, insuranceYearly:0,
-  mgmtPct:10, maintenance:0, maintenancePct:0,
-  otherIncome:0, otherExpenses:0,
-  rate:7.25, term:30,
-  rentGrowth:2.5, appreciation:3.0,
+  address: '', zip: '', neighborhood: '',
+  price: 0, downPct: 25, closingPct: 3, reno: 0, renoFinanced: false,
+  rent: 0, vacancyPct: 5, rentRangeLow: 0, rentRangeHigh: 0,
+  taxes: 0, taxesYearly: 0,
+  insurance: 0, insuranceYearly: 0,
+  mgmtPct: 10, maintenance: 0, maintenancePct: 0,
+  otherIncome: 0, otherExpenses: 0,
+  rate: 7.25, term: 30,
+  rentGrowth: 2.5, appreciation: 3.0,
 }
 function ReferralStats({ userEmail }) {
   const [count, setCount] = useState(null)
@@ -1367,12 +1371,12 @@ function SideDrawer({ open, onClose, user, isPro, onUpgrade, onSignOut, onSignIn
           />
           <DrawerItem icon="ti-credit-card" label="Manage Billing" onClick={() => window.open('https://billing.stripe.com/p/login/test_placeholder', '_blank')} />
           <DrawerItem icon="ti-share" label="Copy My Referral Link" onClick={async () => {
-  const code = user?.email?.split('@')[0] || user?.id?.slice(0,8)
-  const link = `https://rental-analyst.com/?ref=${code}`
-  await navigator.clipboard?.writeText(link)
-  alert('Referral link copied to clipboard!\n\n' + link + '\n\nShare this with investors. When they sign up through your link, they\'re tagged as your referral.')
-}} />
-<ReferralStats userEmail={user?.email} />
+            const code = user?.email?.split('@')[0] || user?.id?.slice(0, 8)
+            const link = `https://rental-analyst.com/?ref=${code}`
+            await navigator.clipboard?.writeText(link)
+            alert('Referral link copied to clipboard!\n\n' + link + '\n\nShare this with investors. When they sign up through your link, they\'re tagged as your referral.')
+          }} />
+          <ReferralStats userEmail={user?.email} />
         </DrawerSection>
 
         {/* LENDERS */}
@@ -1478,10 +1482,10 @@ function SideDrawer({ open, onClose, user, isPro, onUpgrade, onSignOut, onSignIn
         {/* SETTINGS */}
         <DrawerSection label="Settings" icon="ti-settings">
           {user ? (
-          <DrawerItem icon="ti-logout" label="Sign Out" onClick={onSignOut} danger />
-        ) : (
-          <DrawerItem icon="ti-user" label="Sign In" onClick={onSignIn} />
-        )}
+            <DrawerItem icon="ti-logout" label="Sign Out" onClick={onSignOut} danger />
+          ) : (
+            <DrawerItem icon="ti-user" label="Sign In" onClick={onSignIn} />
+          )}
         </DrawerSection>
 
         <div style={{ padding: '12px 20px 20px', marginTop: 'auto' }}>
@@ -1579,7 +1583,7 @@ export default function App() {
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
   const [refCode] = useState(() => new URLSearchParams(window.location.search).get('ref') || null)
   const [showDrawer, setShowDrawer] = useState(false)
-// Catch password-recovery links. Supabase fires PASSWORD_RECOVERY when a user
+  // Catch password-recovery links. Supabase fires PASSWORD_RECOVERY when a user
   // arrives via a reset email; we flip into the set-new-password screen.
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
@@ -1608,45 +1612,45 @@ export default function App() {
         // Load user preferences / buy box (maybeSingle avoids 406 when no row exists yet)
         const { data: prefsData } = await supabase.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle()
         if (prefsData) {
-        setUserPrefs(prefsData)
-        setEmailAlertsEnabled(prefsData.email_alerts_enabled ?? false)
-        setAlertFrequency(prefsData.alert_frequency ?? 'daily')
-}
-      // Load trial status
+          setUserPrefs(prefsData)
+          setEmailAlertsEnabled(prefsData.email_alerts_enabled ?? false)
+          setAlertFrequency(prefsData.alert_frequency ?? 'daily')
+        }
+        // Load trial status
         const { data: profileData } = await supabase.from('profiles').select('trial_start, stripe_subscription_status, referred_by').eq('id', user.id).single()
-setTrialStart(profileData?.trial_start ?? null)
-setIsPro(profileData?.stripe_subscription_status === 'active')
+        setTrialStart(profileData?.trial_start ?? null)
+        setIsPro(profileData?.stripe_subscription_status === 'active')
 
-// Save ref code if first time and not already tagged
-if (refCode && !profileData?.referred_by) {
-  await supabase.from('profiles').update({ referred_by: refCode }).eq('id', user.id)
-  await supabase.from('referrals').insert({
-    ref_code: refCode,
-    referred_user_id: user.id,
-    referred_email: user.email
-  })
-}
+        // Save ref code if first time and not already tagged
+        if (refCode && !profileData?.referred_by) {
+          await supabase.from('profiles').update({ referred_by: refCode }).eq('id', user.id)
+          await supabase.from('referrals').insert({
+            ref_code: refCode,
+            referred_user_id: user.id,
+            referred_email: user.email
+          })
+        }
         // Load notifications
-const { data: notifData } = await supabase
-  .from('notifications')
-  .select('*')
-  .eq('user_id', user.id)
-  .order('created_at', { ascending: false })
-  .limit(20)
-if (notifData) setNotifications(notifData)
+        const { data: notifData } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(20)
+        if (notifData) setNotifications(notifData)
 
-// Realtime subscription — badge updates instantly when new match arrives
-const channel = supabase
-  .channel('notifications')
-  .on('postgres_changes', {
-    event: 'INSERT',
-    schema: 'public',
-    table: 'notifications',
-    filter: `user_id=eq.${user.id}`
-  }, payload => {
-    setNotifications(prev => [payload.new, ...prev])
-  })
-  .subscribe()
+        // Realtime subscription — badge updates instantly when new match arrives
+        const channel = supabase
+          .channel('notifications')
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${user.id}`
+          }, payload => {
+            setNotifications(prev => [payload.new, ...prev])
+          })
+          .subscribe()
       }
       setAuthLoading(false)
     })
@@ -1669,7 +1673,7 @@ const channel = supabase
   const [showSignup, setShowSignup] = useState(false)
   const [authMode, setAuthMode] = useState('signup')  // 'signup' | 'signin' | 'forgot'
   const [authInfo, setAuthInfo] = useState('')
-  const [signupForm, setSignupForm] = useState({ firstName:'', email:'', password:'', agreed:false })
+  const [signupForm, setSignupForm] = useState({ firstName: '', email: '', password: '', agreed: false })
   const [signupError, setSignupError] = useState('')
   const [isPro, setIsPro] = useState(false)
   const [trialStart, setTrialStart] = useState(null)
@@ -1687,17 +1691,17 @@ const channel = supabase
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  const set = (key) => (val) => setFields(f => ({ ...f, [key]: ['address','zip','neighborhood'].includes(key) ? val : (parseFloat(val) || 0) }))
+  const set = (key) => (val) => setFields(f => ({ ...f, [key]: ['address', 'zip', 'neighborhood'].includes(key) ? val : (parseFloat(val) || 0) }))
   const activeRent = (sliderRent > 0 && sliderRent !== fields.rent) ? sliderRent : fields.rent
   const metrics = calcMetrics({ ...fields, rent: activeRent, maintenancePct: maintenanceMode === '%' ? fields.maintenancePct : 0 })
 
-  const showToast = (msg, type='success') => {
+  const showToast = (msg, type = 'success') => {
     clearTimeout(toastTimer.current)
     setToast({ msg, type })
     toastTimer.current = setTimeout(() => setToast(null), 5000)
   }
 
- const openUpgrade = (trigger='general') => { setUpgradeTrigger(trigger); setShowUpgrade(true) }
+  const openUpgrade = (trigger = 'general') => { setUpgradeTrigger(trigger); setShowUpgrade(true) }
 
   // Build a shareable link for the current analysis and copy it to clipboard.
   const handleShare = () => {
@@ -1717,11 +1721,11 @@ const channel = supabase
   }
 
   // Save user buy box preferences
-const handleSavePrefs = async (newPrefs) => {
-  const record = { ...newPrefs, user_id: supaUser.id, updated_at: new Date().toISOString(), email_alerts_enabled: emailAlertsEnabled, alert_frequency: alertFrequency }
-  const { data } = await supabase.from('user_preferences').upsert(record, { onConflict: 'user_id' }).select().single()
-  if (data) setUserPrefs(data)
-}
+  const handleSavePrefs = async (newPrefs) => {
+    const record = { ...newPrefs, user_id: supaUser.id, updated_at: new Date().toISOString(), email_alerts_enabled: emailAlertsEnabled, alert_frequency: alertFrequency }
+    const { data } = await supabase.from('user_preferences').upsert(record, { onConflict: 'user_id' }).select().single()
+    if (data) setUserPrefs(data)
+  }
 
   // Mark a deal as viewed by this user
   const handleMarkViewed = async (dealId) => {
@@ -1730,14 +1734,14 @@ const handleSavePrefs = async (newPrefs) => {
     await supabase.from('deal_alert_views').upsert({ user_id: supaUser.id, deal_id: dealId }, { onConflict: 'user_id,deal_id' })
   }
   const markNotifRead = async (id) => {
-  setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
-  await supabase.from('notifications').update({ read: true }).eq('id', id)
-}
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
+    await supabase.from('notifications').update({ read: true }).eq('id', id)
+  }
 
-const markAllRead = async () => {
-  setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-  await supabase.from('notifications').update({ read: true }).eq('user_id', supaUser.id).eq('read', false)
-}
+  const markAllRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+    await supabase.from('notifications').update({ read: true }).eq('user_id', supaUser.id).eq('read', false)
+  }
 
   // Load a deal alert into the analyzer
   const handleLoadDeal = (dealData) => {
@@ -1751,7 +1755,7 @@ const markAllRead = async () => {
 
   const handleSave = async () => {
     if (!supaUser) { setShowSignup(true); return }
-    
+
     if (!isPro && !trialActive && saved.length >= FREE_LIMIT) { openUpgrade('save'); return }
     const entry = { id: Date.now(), fields: { ...fields }, metrics }
     const { error } = await supabase.from('properties').insert({
@@ -1786,7 +1790,7 @@ const markAllRead = async () => {
   }
 
   const handleDelete = async (id) => {
-    await supabase.from('properties').delete().eq('data->>id', String(id)).eq('user_id', supaUser.id)
+    await supabase.from('properties').delete().eq('id', id).eq('user_id', supaUser.id)
     setSaved(prev => prev.filter(p => p.id !== id))
   }
 
@@ -1837,13 +1841,13 @@ const markAllRead = async () => {
         setImportAddress(address); setShowAddressFallback(true)
         showToast('Could not match that address. Edit it below and retry.', 'error')
       } else {
-  showToast('Imported: ' + [
-  importedFields.address && 'Address',
-  importedFields.rent && 'Rent estimate',
-  importedFields.price && 'Price',
-  importedFields.taxes && 'Taxes',
-  importedFields._taxMissing && '⚠️ Tax data unavailable — enter local estimate'
-].filter(Boolean).join(', '))
+        showToast('Imported: ' + [
+          importedFields.address && 'Address',
+          importedFields.rent && 'Rent estimate',
+          importedFields.price && 'Price',
+          importedFields.taxes && 'Taxes',
+          importedFields._taxMissing && '⚠️ Tax data unavailable — enter local estimate'
+        ].filter(Boolean).join(', '))
       }
     } catch (err) {
       setImportAddress(address); setShowAddressFallback(true)
@@ -1861,7 +1865,7 @@ const markAllRead = async () => {
     await runImport(address)
   }
 
-  const capColor = metrics.capRate>=8?'var(--green)':metrics.capRate>=5?'var(--amber)':'var(--red)'
+  const capColor = metrics.capRate >= 8 ? 'var(--green)' : metrics.capRate >= 5 ? 'var(--amber)' : 'var(--red)'
   const totalUnread = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
   const unreadNotifCount = notifications.filter(n => !n.read).length
 
@@ -1880,8 +1884,8 @@ const markAllRead = async () => {
     )
   }
 
-  if (authLoading) return <div style={{color:'white',textAlign:'center',marginTop:80}}>Loading...</div>
-if (recovering) {
+  if (authLoading) return <div style={{ color: 'white', textAlign: 'center', marginTop: 80 }}>Loading...</div>
+  if (recovering) {
     return (
       <ResetPassword onDone={() => {
         setRecovering(false)
@@ -1891,95 +1895,95 @@ if (recovering) {
     )
   }
   const generatePDF = () => {
-  const doc = new jsPDF()
-  const score = calcDealScore(metrics)
+    const doc = new jsPDF()
+    const score = calcDealScore(metrics)
 
-  // Header
-  doc.setFillColor(15, 39, 68)
-  doc.rect(0, 0, 210, 30, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(18)
-  doc.setFont('helvetica', 'bold')
-  doc.text('Rental Analyst — Deal Report', 14, 14)
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.text('rental-analyst.com · Pratt & Associates', 14, 23)
+    // Header
+    doc.setFillColor(15, 39, 68)
+    doc.rect(0, 0, 210, 30, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(18)
+    doc.setFont('helvetica', 'bold')
+    doc.text('Rental Analyst — Deal Report', 14, 14)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text('rental-analyst.com · Pratt & Associates', 14, 23)
 
-  // Address
-  doc.setTextColor(0, 0, 0)
-  doc.setFontSize(14)
-  doc.setFont('helvetica', 'bold')
-  doc.text(fields.address || 'Property Analysis', 14, 42)
-  doc.setFontSize(10)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(100, 100, 100)
-  doc.text(`Generated ${new Date().toLocaleDateString()}`, 14, 50)
+    // Address
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.text(fields.address || 'Property Analysis', 14, 42)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(100, 100, 100)
+    doc.text(`Generated ${new Date().toLocaleDateString()}`, 14, 50)
 
-  // Deal Score
-  if (score) {
-    doc.setFontSize(12)
+    // Deal Score
+    if (score) {
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 0, 0)
+      doc.text(`Deal Score: ${score.score}/100 — ${score.grade.label}`, 14, 62)
+    }
+
+    // Key metrics box
+    doc.setDrawColor(220, 220, 220)
+    doc.setFillColor(245, 248, 255)
+    doc.roundedRect(14, 68, 182, 60, 3, 3, 'FD')
+
+    const metricRows = [
+      ['Purchase Price', fmt(metrics.price), 'Monthly Cash Flow', fmt(metrics.cashflow) + '/mo'],
+      ['Cap Rate', fmtPct(metrics.capRate), 'Cash-on-Cash', fmtPct(metrics.coc)],
+      ['Rent Estimate', fmt(fields.rent) + '/mo', 'DSCR', metrics.dscr ? metrics.dscr.toFixed(2) + 'x' : 'N/A'],
+      ['Total Cash In', fmt(metrics.totalCashIn), 'Gross Yield', fmtPct(metrics.grossYield)],
+    ]
+
+    doc.setFontSize(10)
+    metricRows.forEach((row, i) => {
+      const y = 78 + i * 12
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(100, 100, 100)
+      doc.text(row[0], 20, y)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 0, 0)
+      doc.text(row[1], 80, y)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(100, 100, 100)
+      doc.text(row[2], 110, y)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(0, 0, 0)
+      doc.text(row[3], 170, y)
+    })
+
+    // Expenses
+    doc.setFontSize(11)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(0, 0, 0)
-    doc.text(`Deal Score: ${score.score}/100 — ${score.grade.label}`, 14, 62)
+    doc.text('Monthly Expenses', 14, 142)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.setTextColor(80, 80, 80)
+    const expenses = [
+      `Mortgage: ${fmt(metrics.monthlyMortgage)}/mo`,
+      `Taxes: ${fmt(metrics.taxes)}/mo`,
+      `Insurance: ${fmt(metrics.insurance)}/mo`,
+      `Management: ${fmt(Math.round(fields.rent * fields.mgmtPct / 100))}/mo`,
+      `Maintenance: ${fmt(metrics.maintenance)}/mo`,
+    ]
+    expenses.forEach((e, i) => doc.text(e, 20 + (i > 2 ? 90 : 0), 152 + (i % 3) * 10))
+
+    // Footer
+    doc.setFillColor(15, 39, 68)
+    doc.rect(0, 280, 210, 20, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(9)
+    doc.text('Scott O. Pratt, Broker · Pratt & Associates · paroffice@gmail.com · Not financial advice', 14, 291)
+
+    doc.save(`${fields.address || 'deal-report'}.pdf`)
   }
-
-  // Key metrics box
-  doc.setDrawColor(220, 220, 220)
-  doc.setFillColor(245, 248, 255)
-  doc.roundedRect(14, 68, 182, 60, 3, 3, 'FD')
-
-  const metricRows = [
-    ['Purchase Price', fmt(metrics.price), 'Monthly Cash Flow', fmt(metrics.cashflow) + '/mo'],
-    ['Cap Rate', fmtPct(metrics.capRate), 'Cash-on-Cash', fmtPct(metrics.coc)],
-    ['Rent Estimate', fmt(fields.rent) + '/mo', 'DSCR', metrics.dscr ? metrics.dscr.toFixed(2) + 'x' : 'N/A'],
-    ['Total Cash In', fmt(metrics.totalCashIn), 'Gross Yield', fmtPct(metrics.grossYield)],
-  ]
-
-  doc.setFontSize(10)
-  metricRows.forEach((row, i) => {
-    const y = 78 + i * 12
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(100, 100, 100)
-    doc.text(row[0], 20, y)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text(row[1], 80, y)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(100, 100, 100)
-    doc.text(row[2], 110, y)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 0, 0)
-    doc.text(row[3], 170, y)
-  })
-
-  // Expenses
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(0, 0, 0)
-  doc.text('Monthly Expenses', 14, 142)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.setTextColor(80, 80, 80)
-  const expenses = [
-    `Mortgage: ${fmt(metrics.monthlyMortgage)}/mo`,
-    `Taxes: ${fmt(metrics.taxes)}/mo`,
-    `Insurance: ${fmt(metrics.insurance)}/mo`,
-    `Management: ${fmt(Math.round(fields.rent * fields.mgmtPct / 100))}/mo`,
-    `Maintenance: ${fmt(metrics.maintenance)}/mo`,
-  ]
-  expenses.forEach((e, i) => doc.text(e, 20 + (i > 2 ? 90 : 0), 152 + (i % 3) * 10))
-
-  // Footer
-  doc.setFillColor(15, 39, 68)
-  doc.rect(0, 280, 210, 20, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(9)
-  doc.text('Scott O. Pratt, Broker · Pratt & Associates · paroffice@gmail.com · Not financial advice', 14, 291)
-
-  doc.save(`${fields.address || 'deal-report'}.pdf`)
-}
   return (
-    <div style={{ display:'flex', flexDirection:'column', height:'100vh', overflow:'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }} role="application" aria-label="Rental Analyst - Property Investment Calculator">
       <a href="#main-content" className="skip-nav">Skip to main content</a>
       {showWalkthrough && <WalkthroughBubble onDone={() => { setShowWalkthrough(false); localStorage.setItem('ra_toured', '1') }} />}
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={() => setShowUpgrade(false)} trialStart={trialStart} onStartTrial={startTrial} />}
@@ -2041,7 +2045,7 @@ if (recovering) {
         onSignOut={async () => { await supabase.auth.signOut(); setSupaUser(null); setShowDrawer(false) }}
         onSignIn={() => { setAuthMode('signin'); setSignupError(''); setAuthInfo(''); setShowSignup(true); setShowDrawer(false) }}
       />
-      <header style={{ background:'var(--navy)', color:'#fff', padding:'0 20px', display:'flex', alignItems:'center', height:52, flexShrink:0, gap:16 }} role="banner">
+      <header style={{ background: 'var(--navy)', color: '#fff', padding: '0 20px', display: 'flex', alignItems: 'center', height: 52, flexShrink: 0, gap: 16 }} role="banner">
         <button
           onClick={() => setShowDrawer(true)}
           style={{
@@ -2055,201 +2059,201 @@ if (recovering) {
         >
           <i className="ti ti-menu-2" />
         </button>
-        <div style={{ display:'flex', alignItems:'center', gap:8, fontWeight:600, fontSize:15, letterSpacing:'-0.3px' }}>
-          <i className="ti ti-home-dollar" style={{ fontSize:20, color:'#4da8ff' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: 15, letterSpacing: '-0.3px' }}>
+          <i className="ti ti-home-dollar" style={{ fontSize: 20, color: '#4da8ff' }} />
           Rental Analyst
         </div>
-        {isPro && <span style={{ background:'#4da8ff', color:'#fff', fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10, letterSpacing:'0.5px' }}>PRO</span>}
-        <div style={{ marginLeft:'auto', display:'flex', gap:4, alignItems:'center' }}>
-          {['analyzer','portfolio'].map(t => (
-            <button key={t} onClick={() => setTab(t)} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{ padding:'6px 14px', borderRadius:6, fontSize:13, cursor:'pointer', border:'none', background:tab===t?'rgba(255,255,255,0.15)':'transparent', color:tab===t?'#fff':'rgba(255,255,255,0.55)', display:'flex', alignItems:'center', gap:6, fontFamily:'var(--font)' }}>
-              <i className={`ti ti-${t==='analyzer'?'calculator':'briefcase'}`} style={{ fontSize:14 }} />
-              {t.charAt(0).toUpperCase()+t.slice(1)}
-              {t==='portfolio' && totalUnread > 0 && (
-                <span style={{ background:'#a32d2d', color:'#fff', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:700 }}>{totalUnread}</span>
+        {isPro && <span style={{ background: '#4da8ff', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, letterSpacing: '0.5px' }}>PRO</span>}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, alignItems: 'center' }}>
+          {['analyzer', 'portfolio'].map(t => (
+            <button key={t} onClick={() => setTab(t)} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer', border: 'none', background: tab === t ? 'rgba(255,255,255,0.15)' : 'transparent', color: tab === t ? '#fff' : 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font)' }}>
+              <i className={`ti ti-${t === 'analyzer' ? 'calculator' : 'briefcase'}`} style={{ fontSize: 14 }} />
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+              {t === 'portfolio' && totalUnread > 0 && (
+                <span style={{ background: '#a32d2d', color: '#fff', borderRadius: 10, fontSize: 10, padding: '0 6px', fontWeight: 700 }}>{totalUnread}</span>
               )}
-              {t==='portfolio' && totalUnread === 0 && saved.length > 0 && (
-                <span style={{ background:'#4da8ff', color:'#fff', borderRadius:10, fontSize:10, padding:'0 6px', fontWeight:600 }}>{saved.length}</span>
+              {t === 'portfolio' && totalUnread === 0 && saved.length > 0 && (
+                <span style={{ background: '#4da8ff', color: '#fff', borderRadius: 10, fontSize: 10, padding: '0 6px', fontWeight: 600 }}>{saved.length}</span>
               )}
             </button>
           ))}
           {!isPro && (
-            <button onClick={() => openUpgrade('nav')} aria-label="Upgrade to Pro" style={{ marginLeft:8, padding:'6px 14px', background:'linear-gradient(135deg,#4da8ff,#1a5fa8)', color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center', gap:5 }}>
-              <i className="ti ti-bolt" style={{ fontSize:13 }} /> Go Pro
+            <button onClick={() => openUpgrade('nav')} aria-label="Upgrade to Pro" style={{ marginLeft: 8, padding: '6px 14px', background: 'linear-gradient(135deg,#4da8ff,#1a5fa8)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <i className="ti ti-bolt" style={{ fontSize: 13 }} /> Go Pro
             </button>
           )}
-         {/* 🔔 Notification Bell */}
-{!isMobile && <div style={{ position: 'relative' }}>
-  <button
-    onClick={() => setShowNotifDropdown(v => !v)}
-    style={{
-      padding: '6px 10px', background: 'rgba(255,255,255,0.08)',
-      color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.15)',
-      borderRadius: 6, fontSize: 16, cursor: 'pointer', position: 'relative',
-      display: 'flex', alignItems: 'center'
-    }}>
-    <i className="ti ti-bell" />
-    {unreadNotifCount > 0 && (
-      <span style={{
-        position: 'absolute', top: -4, right: -4,
-        background: '#a32d2d', color: '#fff',
-        fontSize: 9, fontWeight: 700,
-        padding: '1px 5px', borderRadius: 10,
-        minWidth: 16, textAlign: 'center'
-      }}>{unreadNotifCount}</span>
-    )}
-  </button>
+          {/* 🔔 Notification Bell */}
+          {!isMobile && <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowNotifDropdown(v => !v)}
+              style={{
+                padding: '6px 10px', background: 'rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 6, fontSize: 16, cursor: 'pointer', position: 'relative',
+                display: 'flex', alignItems: 'center'
+              }}>
+              <i className="ti ti-bell" />
+              {unreadNotifCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: -4, right: -4,
+                  background: '#a32d2d', color: '#fff',
+                  fontSize: 9, fontWeight: 700,
+                  padding: '1px 5px', borderRadius: 10,
+                  minWidth: 16, textAlign: 'center'
+                }}>{unreadNotifCount}</span>
+              )}
+            </button>
 
-  {showNotifDropdown && (
-    <div style={{
-      position: 'absolute', top: 40, right: 0, width: 320,
-      background: 'var(--surface)', border: '1px solid var(--border)',
-      borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
-      zIndex: 500, overflow: 'hidden'
-    }}>
-      <div style={{
-        padding: '12px 16px', borderBottom: '1px solid var(--border)',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-      }}>
-        <div style={{ fontSize: 13, fontWeight: 700 }}>🔔 Deal Matches</div>
-        {unreadNotifCount > 0 && (
-          <button onClick={markAllRead} style={{
-            fontSize: 11, color: '#1a5fa8', background: 'none',
-            border: 'none', cursor: 'pointer', fontFamily: 'var(--font)'
-          }}>Mark all read</button>
-        )}
-      </div>
-      {notifications.length === 0 ? (
-        <div style={{ padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--text3)' }}>
-          No notifications yet
-        </div>
-      ) : (
-        notifications.slice(0, 10).map(n => (
-          <div key={n.id}
-            onClick={() => markNotifRead(n.id)}
-            style={{
-              padding: '12px 16px', borderBottom: '1px solid var(--border)',
-              cursor: 'pointer', background: n.read ? 'transparent' : '#f0f7ff',
-              display: 'flex', gap: 10, alignItems: 'flex-start'
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = '#f4f8ff'}
-            onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : '#f0f7ff'}
-          >
-            <div style={{
-              width: 36, height: 36, borderRadius: 8,
-              background: '#1a5fa822', display: 'flex',
-              alignItems: 'center', justifyContent: 'center', flexShrink: 0
-            }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#1a5fa8' }}>{n.deal_score}</span>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {n.address || 'New deal match'}
+            {showNotifDropdown && (
+              <div style={{
+                position: 'absolute', top: 40, right: 0, width: 320,
+                background: 'var(--surface)', border: '1px solid var(--border)',
+                borderRadius: 10, boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+                zIndex: 500, overflow: 'hidden'
+              }}>
+                <div style={{
+                  padding: '12px 16px', borderBottom: '1px solid var(--border)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>🔔 Deal Matches</div>
+                  {unreadNotifCount > 0 && (
+                    <button onClick={markAllRead} style={{
+                      fontSize: 11, color: '#1a5fa8', background: 'none',
+                      border: 'none', cursor: 'pointer', fontFamily: 'var(--font)'
+                    }}>Mark all read</button>
+                  )}
+                </div>
+                {notifications.length === 0 ? (
+                  <div style={{ padding: 24, textAlign: 'center', fontSize: 13, color: 'var(--text3)' }}>
+                    No notifications yet
+                  </div>
+                ) : (
+                  notifications.slice(0, 10).map(n => (
+                    <div key={n.id}
+                      onClick={() => markNotifRead(n.id)}
+                      style={{
+                        padding: '12px 16px', borderBottom: '1px solid var(--border)',
+                        cursor: 'pointer', background: n.read ? 'transparent' : '#f0f7ff',
+                        display: 'flex', gap: 10, alignItems: 'flex-start'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f4f8ff'}
+                      onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : '#f0f7ff'}
+                    >
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 8,
+                        background: '#1a5fa822', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                      }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#1a5fa8' }}>{n.deal_score}</span>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {n.address || 'New deal match'}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text2)' }}>
+                          Score {n.deal_score} · {n.cash_flow_est ? `$${n.cash_flow_est.toLocaleString()}/mo CF · ` : ''}{new Date(n.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      {!n.read && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#1a5fa8', flexShrink: 0, marginTop: 4 }} />}
+                    </div>
+                  ))
+                )}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text2)' }}>
-                Score {n.deal_score} · {n.cash_flow_est ? `$${n.cash_flow_est.toLocaleString()}/mo CF · ` : ''}{new Date(n.created_at).toLocaleDateString()}
-              </div>
-            </div>
-            {!n.read && <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#1a5fa8', flexShrink: 0, marginTop: 4 }} />}
-          </div>
-        ))
-      )}
-    </div>
-  )}
-</div>}
+            )}
+          </div>}
 
-           <button onClick={async () => { await supabase.auth.signOut(); setSupaUser(null) }} aria-label="Sign out" title="Sign out" style={{ marginLeft:4, padding:'6px 10px', background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.7)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:6, fontSize:16, cursor:'pointer', fontFamily:'var(--font)', display:'flex', alignItems:'center' }}>
+          <button onClick={async () => { await supabase.auth.signOut(); setSupaUser(null) }} aria-label="Sign out" title="Sign out" style={{ marginLeft: 4, padding: '6px 10px', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 6, fontSize: 16, cursor: 'pointer', fontFamily: 'var(--font)', display: 'flex', alignItems: 'center' }}>
             <i className="ti ti-logout" />
           </button>
         </div>
       </header>
       {/* ── EMAIL ALERT NUDGE BANNER ──────────────────────── */}
-{supaUser && !emailAlertsEnabled && !nudgeDismissed && (
-  <div style={{
-    background: 'linear-gradient(135deg, #1a3a5c, #1a5fa8)',
-    color: '#fff',
-    padding: '10px 20px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: 13,
-    flexShrink: 0
-  }}>
-    <span>
-      <i className="ti ti-bell" style={{ marginRight: 6 }} />
-      🔔 Get email alerts when deals match your criteria —{' '}
-      <strong>turn on in your Buy Box settings below</strong>
-    </span>
-    <button
-      onClick={() => {
-        setNudgeDismissed(true)
-        supabase.from('profiles')
-          .update({ dashboard_nudge_dismissed: true })
-          .eq('id', supaUser.id)
-      }}
-      style={{
-        background: 'none', border: 'none', color: '#fff',
-        cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: '0 4px'
-      }}
-    >
-      ×
-    </button>
-  </div>
-)}
+      {supaUser && !emailAlertsEnabled && !nudgeDismissed && (
+        <div style={{
+          background: 'linear-gradient(135deg, #1a3a5c, #1a5fa8)',
+          color: '#fff',
+          padding: '10px 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          fontSize: 13,
+          flexShrink: 0
+        }}>
+          <span>
+            <i className="ti ti-bell" style={{ marginRight: 6 }} />
+            🔔 Get email alerts when deals match your criteria —{' '}
+            <strong>turn on in your Buy Box settings below</strong>
+          </span>
+          <button
+            onClick={() => {
+              setNudgeDismissed(true)
+              supabase.from('profiles')
+                .update({ dashboard_nudge_dismissed: true })
+                .eq('id', supaUser.id)
+            }}
+            style={{
+              background: 'none', border: 'none', color: '#fff',
+              cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: '0 4px'
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
-      {tab==='analyzer' && (
-        <div style={{ display:'flex', background:'var(--surface)', borderBottom:'1px solid var(--border)', overflowX:'auto', flexShrink:0 }}>
-          <MetricCard label="Monthly cash flow (Yr 1)" value={fmt(metrics.cashflow)+'/mo'} sub="After all expenses + debt" valueStyle={{ color:metrics.cashflow>=0?'var(--green)':'var(--red)' }} />
-          <MetricCard label="Cap rate (Yr 1)" value={fmtPct(metrics.capRate)} sub="NOI ÷ property value" valueStyle={{ color:capColor }} badge={<CapBadge capRate={metrics.capRate} />} />
-          <MetricCard label="Cash-on-cash (Yr 1)" value={fmtPct(metrics.coc)} sub="Annual CF ÷ cash invested" valueStyle={{ color:metrics.coc>=0?'var(--green)':'var(--red)' }} />
+      {tab === 'analyzer' && (
+        <div style={{ display: 'flex', background: 'var(--surface)', borderBottom: '1px solid var(--border)', overflowX: 'auto', flexShrink: 0 }}>
+          <MetricCard label="Monthly cash flow (Yr 1)" value={fmt(metrics.cashflow) + '/mo'} sub="After all expenses + debt" valueStyle={{ color: metrics.cashflow >= 0 ? 'var(--green)' : 'var(--red)' }} />
+          <MetricCard label="Cap rate (Yr 1)" value={fmtPct(metrics.capRate)} sub="NOI ÷ property value" valueStyle={{ color: capColor }} badge={<CapBadge capRate={metrics.capRate} />} />
+          <MetricCard label="Cash-on-cash (Yr 1)" value={fmtPct(metrics.coc)} sub="Annual CF ÷ cash invested" valueStyle={{ color: metrics.coc >= 0 ? 'var(--green)' : 'var(--red)' }} />
           <MetricCard label="Gross yield (Yr 1)" value={fmtPct(metrics.grossYield)} sub="Annual rent ÷ purchase price" valueStyle={{}} />
           <MetricCard label="Total cash in" value={fmt(metrics.totalCashIn)} sub="Down + closing + reno" valueStyle={{}} />
-          <div style={{ flex:1, minWidth:110, padding:'14px 18px', display:'flex', flexDirection:'column', gap:2 }}>
-            <div style={{ fontSize:11, color:'var(--text2)' }}>Break-even rent</div>
-            <div style={{ fontSize:22, fontWeight:600 }}>{fmt(metrics.breakeven)}/mo</div>
-            <div style={{ fontSize:11, color:'var(--text3)' }}>Min rent to cover costs</div>
+          <div style={{ flex: 1, minWidth: 110, padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ fontSize: 11, color: 'var(--text2)' }}>Break-even rent</div>
+            <div style={{ fontSize: 22, fontWeight: 600 }}>{fmt(metrics.breakeven)}/mo</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)' }}>Min rent to cover costs</div>
           </div>
         </div>
       )}
 
-      {tab==='analyzer' ? (
-        <main id="main-content" style={{ display:'flex', flex:1, overflow: isMobile ? 'auto' : 'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
-          <div style={{ width: isMobile ? '100%' : 280, minWidth: isMobile ? 'unset' : 280, background:'var(--surface)', borderRight: isMobile ? 'none' : '1px solid var(--border)', borderBottom: isMobile ? '1px solid var(--border)' : 'none', overflowY: isMobile ? 'visible' : 'auto', padding:16 }}>
-            <div style={{ border:'1px solid var(--border)', borderRadius:12, padding:12, marginBottom:14 }}>
+      {tab === 'analyzer' ? (
+        <main id="main-content" style={{ display: 'flex', flex: 1, overflow: isMobile ? 'auto' : 'hidden', flexDirection: isMobile ? 'column' : 'row' }}>
+          <div style={{ width: isMobile ? '100%' : 280, minWidth: isMobile ? 'unset' : 280, background: 'var(--surface)', borderRight: isMobile ? 'none' : '1px solid var(--border)', borderBottom: isMobile ? '1px solid var(--border)' : 'none', overflowY: isMobile ? 'visible' : 'auto', padding: 16 }}>
+            <div style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 12, marginBottom: 14 }}>
               <SectionLabel icon="link">Import from Zillow</SectionLabel>
-              <div style={{ display:'flex', gap:6 }}>
-                <input type="text" value={zillowUrl} onChange={e => setZillowUrl(e.target.value)} placeholder="Paste a Zillow listing URL…" aria-label="Zillow listing URL" style={{ flex:1, fontSize:12 }} />
-                <button onClick={handleImport} disabled={importing} style={{ padding:'8px 12px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:6, fontSize:13, cursor:importing?'not-allowed':'pointer', fontWeight:500, fontFamily:'var(--font)', whiteSpace:'nowrap', opacity:importing?0.7:1, display:'flex', alignItems:'center', gap:5 }}>
-                  {importing ? 'Importing…' : isPro ? 'Import' : <><i className="ti ti-bolt" style={{fontSize:12}}/> Pro</>}
+              <div style={{ display: 'flex', gap: 6 }}>
+                <input type="text" value={zillowUrl} onChange={e => setZillowUrl(e.target.value)} placeholder="Paste a Zillow listing URL…" aria-label="Zillow listing URL" style={{ flex: 1, fontSize: 12 }} />
+                <button onClick={handleImport} disabled={importing} style={{ padding: '8px 12px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, cursor: importing ? 'not-allowed' : 'pointer', fontWeight: 500, fontFamily: 'var(--font)', whiteSpace: 'nowrap', opacity: importing ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  {importing ? 'Importing…' : isPro ? 'Import' : <><i className="ti ti-bolt" style={{ fontSize: 12 }} /> Pro</>}
                 </button>
               </div>
               {showAddressFallback && (
-                <div style={{ marginTop:8 }}>
-                  <div style={{ fontSize:11, color:"var(--text2)", marginBottom:4 }}>Edit address and retry:</div>
-                  <div style={{ display:"flex", gap:6 }}>
-                    <input type="text" value={importAddress} onChange={e => setImportAddress(e.target.value)} style={{ flex:1, fontSize:12 }} placeholder="123 Main St, City, ST 12345" />
-                    <button onClick={() => runImport(importAddress)} disabled={importing} style={{ padding:"6px 10px", background:"#1a5fa8", color:"#fff", border:"none", borderRadius:6, fontSize:12, cursor:"pointer", fontWeight:500, fontFamily:"var(--font)", whiteSpace:"nowrap" }}>Retry</button>
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 11, color: "var(--text2)", marginBottom: 4 }}>Edit address and retry:</div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <input type="text" value={importAddress} onChange={e => setImportAddress(e.target.value)} style={{ flex: 1, fontSize: 12 }} placeholder="123 Main St, City, ST 12345" />
+                    <button onClick={() => runImport(importAddress)} disabled={importing} style={{ padding: "6px 10px", background: "#1a5fa8", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, cursor: "pointer", fontWeight: 500, fontFamily: "var(--font)", whiteSpace: "nowrap" }}>Retry</button>
                   </div>
                 </div>
               )}
               {toast && (
-                <div role="alert" aria-live="polite" style={{ marginTop:8, padding:"7px 10px", background:toast.type==="success"?"#eaf3de":"#faeeda", borderRadius:6, fontSize:11, color:toast.type==="success"?"#3b6d11":"#854f0b", display:"flex", gap:6, alignItems:"flex-start", wordBreak:"break-word" }}>
-                  <i className={`ti ${toast.type==="success"?"ti-circle-check":"ti-alert-circle"}`} style={{ fontSize:14, marginTop:1, flexShrink:0 }} />{toast.msg}
+                <div role="alert" aria-live="polite" style={{ marginTop: 8, padding: "7px 10px", background: toast.type === "success" ? "#eaf3de" : "#faeeda", borderRadius: 6, fontSize: 11, color: toast.type === "success" ? "#3b6d11" : "#854f0b", display: "flex", gap: 6, alignItems: "flex-start", wordBreak: "break-word" }}>
+                  <i className={`ti ${toast.type === "success" ? "ti-circle-check" : "ti-alert-circle"}`} style={{ fontSize: 14, marginTop: 1, flexShrink: 0 }} />{toast.msg}
                 </div>
               )}
             </div>
-            <div style={{ marginBottom:14 }}>
-              <button onClick={handleSave} aria-label="Save property to portfolio" style={{ width:'100%', padding:'8px 12px', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, cursor:'pointer', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', gap:6, fontFamily:'var(--font)' }}>
+            <div style={{ marginBottom: 14 }}>
+              <button onClick={handleSave} aria-label="Save property to portfolio" style={{ width: '100%', padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'var(--font)' }}>
                 <i className="ti ti-bookmark" /> Save property
-                {!isPro && <span style={{ marginLeft:'auto', fontSize:11, color:'var(--text3)' }}>{saved.length}/{FREE_LIMIT}</span>}
+                {!isPro && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>{saved.length}/{FREE_LIMIT}</span>}
               </button>
               {!isPro && !trialActive && saved.length >= FREE_LIMIT && (
-                <div style={{ fontSize:11, color:'#a32d2d', marginTop:4, textAlign:'center' }}>
-                  Free limit reached — <button onClick={() => openUpgrade('save')} style={{ background:'none', border:'none', color:'#1a5fa8', fontSize:11, cursor:'pointer', padding:0, fontFamily:'var(--font)', textDecoration:'underline' }}>upgrade to save more</button>
+                <div style={{ fontSize: 11, color: '#a32d2d', marginTop: 4, textAlign: 'center' }}>
+                  Free limit reached — <button onClick={() => openUpgrade('save')} style={{ background: 'none', border: 'none', color: '#1a5fa8', fontSize: 11, cursor: 'pointer', padding: 0, fontFamily: 'var(--font)', textDecoration: 'underline' }}>upgrade to save more</button>
                 </div>
               )}
               {/* ── SHARE ANALYSIS BUTTON ── */}
-              <button onClick={handleShare} aria-label="Share this analysis" style={{ width:'100%', padding:'8px 12px', marginTop:8, background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, cursor:'pointer', color:'var(--text)', display:'flex', alignItems:'center', justifyContent:'center', gap:6, fontFamily:'var(--font)' }}>
+              <button onClick={handleShare} aria-label="Share this analysis" style={{ width: '100%', padding: '8px 12px', marginTop: 8, background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'var(--font)' }}>
                 <i className="ti ti-share" /> Share analysis
               </button>
             </div>
@@ -2260,31 +2264,31 @@ if (recovering) {
               <Field label="Neighborhood" id="neighborhood" value={fields.neighborhood} onChange={set('neighborhood')} type="text" />
             </FieldRow>
             <Divider />
-           <div style={{padding: '4px 0 8px'}}>
-  <button
-    onClick={() => {
-      if (fields.address && fields.zip) {
-        runImport(`${fields.address} ${fields.zip}`)
-      } else {
-        showToast('Please enter an address and zip code first')
-      }
-    }}
-    style={{
-      width: '100%',
-      padding: '10px',
-      marginTop: '8px',
-      background: '#0f2744',
-      color: 'white',
-      border: 'none',
-      borderRadius: '6px',
-      fontSize: '14px',
-      fontWeight: '600',
-      cursor: 'pointer'
-    }}
-  >
-    🔍 Analyze This Property
-  </button>
-</div>
+            <div style={{ padding: '4px 0 8px' }}>
+              <button
+                onClick={() => {
+                  if (fields.address && fields.zip) {
+                    runImport(`${fields.address} ${fields.zip}`)
+                  } else {
+                    showToast('Please enter an address and zip code first')
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  marginTop: '8px',
+                  background: '#0f2744',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                🔍 Analyze This Property
+              </button>
+            </div>
             <SectionLabel icon="home">Purchase</SectionLabel>
             <Field label="Purchase price" id="price" value={fields.price} onChange={set('price')} prefix="$" />
             <FieldRow>
@@ -2292,25 +2296,27 @@ if (recovering) {
               <Field label="Closing costs" id="closingPct" value={fields.closingPct} onChange={set('closingPct')} suffix="%" />
             </FieldRow>
             {fields.price > 0 && fields.downPct < 100 && (
-              <div style={{ background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, padding:'8px 12px', fontSize:12, marginBottom:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <span style={{ color:'var(--text2)' }}>💵 Down: <strong style={{ color:'var(--text)' }}>{fmt(metrics.down)}</strong></span>
-                <span style={{ color:'var(--text2)' }}>🏦 Financed: <strong style={{ color:'#1a5fa8' }}>{fmt(metrics.loanAmt)}</strong></span>
+              <div style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, padding: '8px 12px', fontSize: 12, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'var(--text2)' }}>💵 Down: <strong style={{ color: 'var(--text)' }}>{fmt(metrics.down)}</strong></span>
+                <span style={{ color: 'var(--text2)' }}>🏦 Financed: <strong style={{ color: '#1a5fa8' }}>{fmt(metrics.loanAmt)}</strong></span>
               </div>
             )}
             {fields.downPct >= 100 && (
-              <div style={{ background:'#eaf3de', border:'1px solid #b7d9a0', borderRadius:6, padding:'6px 10px', fontSize:11, color:'#3b6d11', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
-                <i className="ti ti-cash" style={{ fontSize:13 }} /> Cash purchase — no mortgage
+              <div style={{ background: '#eaf3de', border: '1px solid #b7d9a0', borderRadius: 6, padding: '6px 10px', fontSize: 11, color: '#3b6d11', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <i className="ti ti-cash" style={{ fontSize: 13 }} /> Cash purchase — no mortgage
               </div>
             )}
             <Field label="Renovation budget" id="reno" value={fields.reno} onChange={set('reno')} prefix="$" />
-            <div style={{ fontSize:11, color:'var(--text3)', marginTop:-8, marginBottom:6, lineHeight:1.4 }}>How is the renovation funded?</div>
-            <div style={{ display:'flex', gap:6, marginBottom:12 }}>
-              {['Cash','Financed'].map(opt => (
-                <button key={opt} onClick={() => setFields(f => ({...f, renoFinanced: opt==='Financed'}))}
-                  style={{ flex:1, padding:'6px', fontSize:12, fontWeight:500, borderRadius:6, cursor:'pointer', fontFamily:'var(--font)',
-                    background: (opt==='Financed') === fields.renoFinanced ? '#1a5fa8' : 'var(--surface2)',
-                    color: (opt==='Financed') === fields.renoFinanced ? '#fff' : 'var(--text2)',
-                    border: '1px solid var(--border)' }}>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: -8, marginBottom: 6, lineHeight: 1.4 }}>How is the renovation funded?</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+              {['Cash', 'Financed'].map(opt => (
+                <button key={opt} onClick={() => setFields(f => ({ ...f, renoFinanced: opt === 'Financed' }))}
+                  style={{
+                    flex: 1, padding: '6px', fontSize: 12, fontWeight: 500, borderRadius: 6, cursor: 'pointer', fontFamily: 'var(--font)',
+                    background: (opt === 'Financed') === fields.renoFinanced ? '#1a5fa8' : 'var(--surface2)',
+                    color: (opt === 'Financed') === fields.renoFinanced ? '#fff' : 'var(--text2)',
+                    border: '1px solid var(--border)'
+                  }}>
                   {opt}
                 </button>
               ))}
@@ -2323,34 +2329,34 @@ if (recovering) {
             <Divider />
             <SectionLabel icon="receipt">Monthly expenses</SectionLabel>
             <FieldRow>
-              <Field label="Property taxes (yearly)" id="taxesYearly" value={fields.taxesYearly} onChange={val => setFields(f => ({...f, taxesYearly: parseFloat(val)||0, taxes: Math.round((parseFloat(val)||0)/12)}))} prefix="$" />
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:12, fontWeight:500, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Monthly</div>
-                <div style={{ padding:'8px 10px', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, color:'var(--text3)' }}>{fmt(metrics.taxes)}/mo</div>
+              <Field label="Property taxes (yearly)" id="taxesYearly" value={fields.taxesYearly} onChange={val => setFields(f => ({ ...f, taxesYearly: parseFloat(val) || 0, taxes: Math.round((parseFloat(val) || 0) / 12) }))} prefix="$" />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text2)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monthly</div>
+                <div style={{ padding: '8px 10px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, color: 'var(--text3)' }}>{fmt(metrics.taxes)}/mo</div>
               </div>
             </FieldRow>
             <FieldRow>
-              <Field label="Insurance (yearly)" id="insuranceYearly" value={fields.insuranceYearly} onChange={val => setFields(f => ({...f, insuranceYearly: parseFloat(val)||0, insurance: Math.round((parseFloat(val)||0)/12)}))} prefix="$" />
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:12, fontWeight:500, color:'var(--text2)', marginBottom:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>Monthly</div>
-                <div style={{ padding:'8px 10px', background:'var(--surface2)', border:'1px solid var(--border)', borderRadius:6, fontSize:13, color:'var(--text3)' }}>{fmt(metrics.insurance)}/mo</div>
+              <Field label="Insurance (yearly)" id="insuranceYearly" value={fields.insuranceYearly} onChange={val => setFields(f => ({ ...f, insuranceYearly: parseFloat(val) || 0, insurance: Math.round((parseFloat(val) || 0) / 12) }))} prefix="$" />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text2)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Monthly</div>
+                <div style={{ padding: '8px 10px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, color: 'var(--text3)' }}>{fmt(metrics.insurance)}/mo</div>
               </div>
             </FieldRow>
             <Field label="Property management" id="mgmtPct" value={fields.mgmtPct} onChange={set('mgmtPct')} suffix="%" />
-            <div style={{ marginBottom:12 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-                <label style={{ fontSize:12, fontWeight:500, color:'var(--text2)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Maintenance / CapEx</label>
-                <div style={{ display:'flex', gap:4 }}>
-                  {['$','%'].map(m => (
-                    <button key={m} onClick={() => setMaintenanceMode(m)} style={{ padding:'2px 8px', fontSize:11, borderRadius:4, cursor:'pointer', fontFamily:'var(--font)', background: maintenanceMode===m ? '#1a5fa8' : 'var(--surface2)', color: maintenanceMode===m ? '#fff' : 'var(--text2)', border:'1px solid var(--border)' }}>{m}</button>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--text2)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Maintenance / CapEx</label>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {['$', '%'].map(m => (
+                    <button key={m} onClick={() => setMaintenanceMode(m)} style={{ padding: '2px 8px', fontSize: 11, borderRadius: 4, cursor: 'pointer', fontFamily: 'var(--font)', background: maintenanceMode === m ? '#1a5fa8' : 'var(--surface2)', color: maintenanceMode === m ? '#fff' : 'var(--text2)', border: '1px solid var(--border)' }}>{m}</button>
                   ))}
                 </div>
               </div>
               {maintenanceMode === '$'
-                ? <div style={{ position:'relative' }}><span style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', fontSize:13, color:'var(--text3)', pointerEvents:'none' }}>$</span><input type="number" value={fields.maintenance} onChange={e => set('maintenance')(e.target.value)} onFocus={e => e.target.select()} style={{ paddingLeft:18 }} /></div>
-                : <div style={{ position:'relative' }}><input type="number" value={fields.maintenancePct} onChange={e => set('maintenancePct')(e.target.value)} onFocus={e => e.target.select()} style={{ paddingRight:28 }} /><span style={{ position:'absolute', right:9, top:'50%', transform:'translateY(-50%)', fontSize:12, color:'var(--text3)', pointerEvents:'none' }}>% rent</span></div>
+                ? <div style={{ position: 'relative' }}><span style={{ position: 'absolute', left: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'var(--text3)', pointerEvents: 'none' }}>$</span><input type="number" value={fields.maintenance} onChange={e => set('maintenance')(e.target.value)} onFocus={e => e.target.select()} style={{ paddingLeft: 18 }} /></div>
+                : <div style={{ position: 'relative' }}><input type="number" value={fields.maintenancePct} onChange={e => set('maintenancePct')(e.target.value)} onFocus={e => e.target.select()} style={{ paddingRight: 28 }} /><span style={{ position: 'absolute', right: 9, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--text3)', pointerEvents: 'none' }}>% rent</span></div>
               }
-              <div style={{ fontSize:11, color:'var(--text3)', marginTop:4 }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
                 {maintenanceMode === '%' ? `= ${fmt(metrics.maintenance)}/mo (${fields.maintenancePct}% of effective rent)` : 'Industry avg: 8-10% of gross rent'}
               </div>
             </div>
@@ -2365,73 +2371,73 @@ if (recovering) {
               <Field label="Rent growth" id="rentGrowth" value={fields.rentGrowth} onChange={set('rentGrowth')} suffix="%" />
               <Field label="Appreciation" id="appreciation" value={fields.appreciation} onChange={set('appreciation')} suffix="%" />
             </FieldRow>
-            <div style={{ fontSize:11, color:'var(--text3)', marginTop:-6, marginBottom:8, lineHeight:1.5 }}>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: -6, marginBottom: 8, lineHeight: 1.5 }}>
               Annual rates used in 10-year projection. National avg: 2-3% rent growth, 3-4% appreciation.
             </div>
           </div>
-          <div style={{ flex:1, overflowY:'auto', padding:24 }}>
-            <div style={{ background:'var(--navy)', color:'#fff', borderRadius:12, padding:'18px 22px', marginBottom:18 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4 }}>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', letterSpacing:'1px', textTransform:'uppercase' }}>Investment calculator</div>
-                {metrics.isCashDeal && <span style={{ background:'rgba(77,168,255,0.25)', color:'#4da8ff', fontSize:10, fontWeight:600, padding:'2px 8px', borderRadius:10, letterSpacing:'0.5px' }}>💵 CASH DEAL</span>}
+          <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+            <div style={{ background: 'var(--navy)', color: '#fff', borderRadius: 12, padding: '18px 22px', marginBottom: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', textTransform: 'uppercase' }}>Investment calculator</div>
+                {metrics.isCashDeal && <span style={{ background: 'rgba(77,168,255,0.25)', color: '#4da8ff', fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, letterSpacing: '0.5px' }}>💵 CASH DEAL</span>}
               </div>
-              <div style={{ fontSize:20, fontWeight:600, marginBottom:2 }}>{fields.address||'Rental Property Analyzer'}</div>
-              <div style={{ fontSize:13, color:'rgba(255,255,255,0.6)' }}>{fields.neighborhood&&fields.zip?`${fields.neighborhood}, ${fields.zip}`:'Enter property details to analyze'}</div>
+              <div style={{ fontSize: 20, fontWeight: 600, marginBottom: 2 }}>{fields.address || 'Rental Property Analyzer'}</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>{fields.neighborhood && fields.zip ? `${fields.neighborhood}, ${fields.zip}` : 'Enter property details to analyze'}</div>
               {fields.rentRangeLow > 0 && (
-                <div style={{ marginTop:8, display:'flex', gap:8, flexWrap:'wrap' }}>
-                  <span style={{ background:'rgba(255,255,255,0.1)', borderRadius:6, padding:'3px 10px', fontSize:12, color:'rgba(255,255,255,0.85)' }}>
+                <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
                     🏠 Market rent: ${fields.rentRangeLow.toLocaleString()}–${fields.rentRangeHigh.toLocaleString()}/mo
                   </span>
                   {fields.rent > 0 && (
-                    <span style={{ background: fields.rent >= fields.rentRangeLow ? 'rgba(26,122,74,0.4)' : 'rgba(163,45,45,0.4)', borderRadius:6, padding:'3px 10px', fontSize:12, color:'rgba(255,255,255,0.9)' }}>
+                    <span style={{ background: fields.rent >= fields.rentRangeLow ? 'rgba(26,122,74,0.4)' : 'rgba(163,45,45,0.4)', borderRadius: 6, padding: '3px 10px', fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>
                       {fields.rent >= fields.rentRangeLow ? '✅ At or above market' : '⚠️ Below market range'}
                     </span>
                   )}
                 </div>
               )}
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:12, marginBottom:18 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12, marginBottom: 18 }}>
               {[
-                { label:'Monthly NOI', value:fmt(metrics.noi), pos:metrics.noi>=0 },
-                { label:'Annual cash flow', value:fmt(metrics.annualCF), pos:metrics.annualCF>=0 },
-                { label: metrics.isCashDeal ? 'No mortgage' : 'Monthly mortgage', value: metrics.isCashDeal ? 'Cash purchase' : fmt(metrics.monthlyMortgage)+'/mo' },
-                { label:'Loan amount', value: metrics.isCashDeal ? 'N/A' : fmtK(metrics.loanAmt) },
+                { label: 'Monthly NOI', value: fmt(metrics.noi), pos: metrics.noi >= 0 },
+                { label: 'Annual cash flow', value: fmt(metrics.annualCF), pos: metrics.annualCF >= 0 },
+                { label: metrics.isCashDeal ? 'No mortgage' : 'Monthly mortgage', value: metrics.isCashDeal ? 'Cash purchase' : fmt(metrics.monthlyMortgage) + '/mo' },
+                { label: 'Loan amount', value: metrics.isCashDeal ? 'N/A' : fmtK(metrics.loanAmt) },
               ].map(m => (
-                <div key={m.label} style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:10, padding:'14px 16px' }}>
-                  <div style={{ fontSize:11, color:'var(--text2)', marginBottom:4 }}>{m.label}</div>
-                  <div style={{ fontSize:20, fontWeight:600, color:m.pos===false?'var(--red)':m.pos?'var(--green)':'var(--text)' }}>{m.value}</div>
+                <div key={m.label} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 4 }}>{m.label}</div>
+                  <div style={{ fontSize: 20, fontWeight: 600, color: m.pos === false ? 'var(--red)' : m.pos ? 'var(--green)' : 'var(--text)' }}>{m.value}</div>
                 </div>
               ))}
             </div>
             {metrics.price > 0 && fields.rent > 0 && (
-              <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'18px 20px', marginBottom:18 }}>
-                <div style={{ fontSize:13, fontWeight:600, marginBottom:14, display:'flex', alignItems:'center', gap:6 }}>
-                  <i className="ti ti-chart-pie" style={{ fontSize:15, color:'#1a5fa8' }} /> Investor Metrics
+              <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px', marginBottom: 18 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <i className="ti ti-chart-pie" style={{ fontSize: 15, color: '#1a5fa8' }} /> Investor Metrics
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))', gap:10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: 10 }}>
                   {[
                     !metrics.isCashDeal && {
-                      label:'DSCR',
+                      label: 'DSCR',
                       value: metrics.dscr !== null ? metrics.dscr.toFixed(2) + 'x' : 'N/A',
                       sub: metrics.dscr >= 1.25 ? 'Lender approved' : metrics.dscr >= 1.0 ? 'Borderline' : 'Below threshold',
                       color: metrics.dscr >= 1.25 ? 'var(--green)' : metrics.dscr >= 1.0 ? 'var(--amber)' : 'var(--red)',
                       tip: 'Debt Service Coverage Ratio — lenders want 1.25x+. Not included in Deal Score.'
                     },
                     metrics.isCashDeal && {
-                      label:'Refi potential',
+                      label: 'Refi potential',
                       value: metrics.maxLoanForDscr > 0 ? fmtK(metrics.maxLoanForDscr) : 'N/A',
                       sub: metrics.cashOutPotential > 0 ? `~${fmtK(metrics.cashOutPotential)} cash-out` : 'At current NOI',
                       color: metrics.maxLoanForDscr > 0 ? 'var(--green)' : 'var(--text2)',
                       tip: 'Max loan amount where DSCR stays at 1.25x — useful for BRRRR or cash-out refi planning.'
                     },
-                    { label:'1% Rule', value: metrics.onePercentRule.toFixed(2) + '%', sub: metrics.onePercentPass ? 'Passes' : 'Does not pass', color: metrics.onePercentPass ? 'var(--green)' : 'var(--red)', tip: 'Monthly rent / purchase price. 1%+ is ideal.' },
-                    { label:'IRR (10yr)', value: isNaN(metrics.irr) || !isFinite(metrics.irr) ? 'N/A' : metrics.irr.toFixed(1) + '%', sub: metrics.irr >= 12 ? 'Strong' : metrics.irr >= 8 ? 'Good' : 'Below avg', color: metrics.irr >= 12 ? 'var(--green)' : metrics.irr >= 8 ? 'var(--amber)' : 'var(--red)', tip: 'Internal Rate of Return over 10 years including sale' },
-                    { label:'Equity Multiple', value: isNaN(metrics.equityMultiple) ? 'N/A' : metrics.equityMultiple.toFixed(2) + 'x', sub: metrics.equityMultiple >= 2 ? 'Strong' : metrics.equityMultiple >= 1.5 ? 'Good' : 'Low', color: metrics.equityMultiple >= 2 ? 'var(--green)' : metrics.equityMultiple >= 1.5 ? 'var(--amber)' : 'var(--red)', tip: 'Total return / cash invested over 10 years' },
+                    { label: '1% Rule', value: metrics.onePercentRule.toFixed(2) + '%', sub: metrics.onePercentPass ? 'Passes' : 'Does not pass', color: metrics.onePercentPass ? 'var(--green)' : 'var(--red)', tip: 'Monthly rent / purchase price. 1%+ is ideal.' },
+                    { label: 'IRR (10yr)', value: isNaN(metrics.irr) || !isFinite(metrics.irr) ? 'N/A' : metrics.irr.toFixed(1) + '%', sub: metrics.irr >= 12 ? 'Strong' : metrics.irr >= 8 ? 'Good' : 'Below avg', color: metrics.irr >= 12 ? 'var(--green)' : metrics.irr >= 8 ? 'var(--amber)' : 'var(--red)', tip: 'Internal Rate of Return over 10 years including sale' },
+                    { label: 'Equity Multiple', value: isNaN(metrics.equityMultiple) ? 'N/A' : metrics.equityMultiple.toFixed(2) + 'x', sub: metrics.equityMultiple >= 2 ? 'Strong' : metrics.equityMultiple >= 1.5 ? 'Good' : 'Low', color: metrics.equityMultiple >= 2 ? 'var(--green)' : metrics.equityMultiple >= 1.5 ? 'var(--amber)' : 'var(--red)', tip: 'Total return / cash invested over 10 years' },
                   ].filter(Boolean).map(m => (
-                    <div key={m.label} title={m.tip} style={{ background:'var(--surface2)', borderRadius:8, padding:'12px 14px', cursor:'help' }}>
-                      <div style={{ fontSize:11, color:'var(--text2)', marginBottom:2 }}>{m.label} <i className="ti ti-info-circle" style={{ fontSize:10, color:'var(--text3)' }} /></div>
-                      <div style={{ fontSize:18, fontWeight:700, color:m.color }}>{m.value}</div>
-                      <div style={{ fontSize:11, color:m.color, marginTop:2 }}>{m.sub}</div>
+                    <div key={m.label} title={m.tip} style={{ background: 'var(--surface2)', borderRadius: 8, padding: '12px 14px', cursor: 'help' }}>
+                      <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 2 }}>{m.label} <i className="ti ti-info-circle" style={{ fontSize: 10, color: 'var(--text3)' }} /></div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color: m.color }}>{m.value}</div>
+                      <div style={{ fontSize: 11, color: m.color, marginTop: 2 }}>{m.sub}</div>
                     </div>
                   ))}
                 </div>
@@ -2441,30 +2447,30 @@ if (recovering) {
                   const text = metrics.dscr >= 1.25
                     ? `Your DSCR of ${metrics.dscr.toFixed(2)}x meets most lenders' minimum of 1.25x. This property qualifies for a DSCR loan as-is.`
                     : metrics.dscr >= 1.0
-                    ? `Your DSCR of ${metrics.dscr.toFixed(2)}x is below the 1.25x most lenders require. To qualify: increase rent to ${fmt(metrics.rentNeededForDscr)}/mo or negotiate the price to ${fmt(metrics.priceNeededForDscr)}.`
-                    : `Your DSCR of ${metrics.dscr.toFixed(2)}x is below lender threshold. You'd need rent of ${fmt(metrics.rentNeededForDscr)}/mo or a purchase price around ${fmt(metrics.priceNeededForDscr)} to qualify for a DSCR loan.`
-                  return <div style={{ marginTop:14, padding:'10px 14px', background:bg, borderRadius:8, fontSize:12, color, lineHeight:1.5 }}><strong>DSCR insight:</strong> {text}</div>
+                      ? `Your DSCR of ${metrics.dscr.toFixed(2)}x is below the 1.25x most lenders require. To qualify: increase rent to ${fmt(metrics.rentNeededForDscr)}/mo or negotiate the price to ${fmt(metrics.priceNeededForDscr)}.`
+                      : `Your DSCR of ${metrics.dscr.toFixed(2)}x is below lender threshold. You'd need rent of ${fmt(metrics.rentNeededForDscr)}/mo or a purchase price around ${fmt(metrics.priceNeededForDscr)} to qualify for a DSCR loan.`
+                  return <div style={{ marginTop: 14, padding: '10px 14px', background: bg, borderRadius: 8, fontSize: 12, color, lineHeight: 1.5 }}><strong>DSCR insight:</strong> {text}</div>
                 })()}
                 {metrics.isCashDeal && metrics.maxLoanForDscr > 0 && (
-                  <div style={{ marginTop:14, padding:'10px 14px', background:'#eaf3de', borderRadius:8, fontSize:12, color:'#1a7a4a', lineHeight:1.5 }}>
+                  <div style={{ marginTop: 14, padding: '10px 14px', background: '#eaf3de', borderRadius: 8, fontSize: 12, color: '#1a7a4a', lineHeight: 1.5 }}>
                     <strong>Refi insight:</strong> Based on current NOI, you could refinance up to {fmtK(metrics.maxLoanForDscr)} and still maintain a 1.25x DSCR.{metrics.cashOutPotential > 0 ? ` That's approximately ${fmtK(metrics.cashOutPotential)} in potential cash-out above your current loan balance.` : ''}
                   </div>
                 )}
-                <div style={{ marginTop:14, paddingTop:12, borderTop:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-                  <div style={{ fontSize:11, color:'var(--text2)', fontWeight:500 }}>Est. expenses:</div>
-                  <span style={{ fontSize:11, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:4, padding:'2px 8px' }}>Insurance: {fmt(metrics.insurance)}/mo</span>
-                  <span style={{ fontSize:11, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:4, padding:'2px 8px' }}>Maintenance: {fmt(metrics.maintenance)}/mo</span>
-                  <span style={{ fontSize:10, color:'var(--text3)' }}>(auto-estimated from price — override in fields)</span>
+                <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 11, color: 'var(--text2)', fontWeight: 500 }}>Est. expenses:</div>
+                  <span style={{ fontSize: 11, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 8px' }}>Insurance: {fmt(metrics.insurance)}/mo</span>
+                  <span style={{ fontSize: 11, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 8px' }}>Maintenance: {fmt(metrics.maintenance)}/mo</span>
+                  <span style={{ fontSize: 10, color: 'var(--text3)' }}>(auto-estimated from price — override in fields)</span>
                 </div>
               </div>
             )}
             {metrics.price > 0
               ? <DealScoreCard metrics={metrics} />
-              : <div style={{ background:'#f0f7ff', border:'2px dashed #c0d8f0', borderRadius:12, padding:'18px 22px', marginBottom:18, textAlign:'center' }}>
-                  <i className="ti ti-calculator" style={{ fontSize:24, color:'#1a5fa8', marginBottom:8, display:'block' }} />
-                  <div style={{ fontSize:14, fontWeight:600, color:'#0f2744', marginBottom:4 }}>Enter purchase price to see Deal Score</div>
-                  <div style={{ fontSize:12, color:'#1a5fa8' }}>A 0–100 score based on cap rate, cash flow, CoC return, and more.</div>
-                </div>
+              : <div style={{ background: '#f0f7ff', border: '2px dashed #c0d8f0', borderRadius: 12, padding: '18px 22px', marginBottom: 18, textAlign: 'center' }}>
+                <i className="ti ti-calculator" style={{ fontSize: 24, color: '#1a5fa8', marginBottom: 8, display: 'block' }} />
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#0f2744', marginBottom: 4 }}>Enter purchase price to see Deal Score</div>
+                <div style={{ fontSize: 12, color: '#1a5fa8' }}>A 0–100 score based on cap rate, cash flow, CoC return, and more.</div>
+              </div>
             }
             {metrics.price > 0 && (
               <GutCheck
@@ -2476,64 +2482,64 @@ if (recovering) {
               />
             )}
             <RentSlider rent={fields.rent || 1500} onChange={v => setSliderRent(v)} />
-            <div style={{ background:'var(--navy)', borderRadius:12, padding:'18px 20px', marginBottom:18, display:'flex', alignItems:'flex-start', gap:14 }}>
-              <div style={{ width:44, height:44, borderRadius:10, background:'rgba(77,168,255,0.2)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <i className="ti ti-home-dollar" style={{ fontSize:22, color:'#4da8ff' }} />
+            <div style={{ background: 'var(--navy)', borderRadius: 12, padding: '18px 20px', marginBottom: 18, display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(77,168,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className="ti ti-home-dollar" style={{ fontSize: 22, color: '#4da8ff' }} />
               </div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', textTransform:'uppercase', letterSpacing:'1px', marginBottom:4 }}>Built by</div>
-                <div style={{ fontSize:15, fontWeight:700, color:'#fff', marginBottom:2 }}>Scott O. Pratt, Broker</div>
-                <div style={{ fontSize:12, color:'rgba(255,255,255,0.6)', marginBottom:8 }}>Pratt & Associates · Woodstock, GA</div>
-                <div style={{ fontSize:12, color:'rgba(255,255,255,0.75)', lineHeight:1.5, marginBottom:12, fontStyle:'italic' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 4 }}>Built by</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 2 }}>Scott O. Pratt, Broker</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>Pratt & Associates · Woodstock, GA</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.5, marginBottom: 12, fontStyle: 'italic' }}>
                   "I built this tool so investors could see what I see. If the numbers work — let's make it happen."
                 </div>
-                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                  <a href="mailto:paroffice@gmail.com" style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 12px', background:'#1a5fa8', borderRadius:6, fontSize:12, color:'#fff', textDecoration:'none', fontWeight:500 }}>
-                    <i className="ti ti-mail" style={{ fontSize:13 }} /> Email Scott
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <a href="mailto:paroffice@gmail.com" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: '#1a5fa8', borderRadius: 6, fontSize: 12, color: '#fff', textDecoration: 'none', fontWeight: 500 }}>
+                    <i className="ti ti-mail" style={{ fontSize: 13 }} /> Email Scott
                   </a>
                 </div>
               </div>
             </div>
             <CompsCard comps={comps} loading={compsLoading} />
-            <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:'20px 20px 10px' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:2 }}>
-                <div style={{ fontSize:15, fontWeight:600 }}>Cash flow over time</div>
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 20px 10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 2 }}>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>Cash flow over time</div>
                 {isPro && (
-                  <button onClick={isPro ? generatePDF : () => openUpgrade('pdf')} style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 10px', background:'#f0f7ff', border:'1px solid #c0d8f0', borderRadius:6, fontSize:12, color:'#1a5fa8', fontWeight:500, cursor:'pointer', fontFamily:'var(--font)' }}>
-                    <i className="ti ti-file-description" style={{ fontSize:13 }} /> Export PDF
-                    <span style={{ background:'#1a5fa8', color:'#fff', fontSize:9, padding:'1px 5px', borderRadius:8, fontWeight:700 }}>PRO</span>
+                  <button onClick={isPro ? generatePDF : () => openUpgrade('pdf')} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', background: '#f0f7ff', border: '1px solid #c0d8f0', borderRadius: 6, fontSize: 12, color: '#1a5fa8', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+                    <i className="ti ti-file-description" style={{ fontSize: 13 }} /> Export PDF
+                    <span style={{ background: '#1a5fa8', color: '#fff', fontSize: 9, padding: '1px 5px', borderRadius: 8, fontWeight: 700 }}>PRO</span>
                   </button>
                 )}
               </div>
-              <div style={{ fontSize:12, color:'var(--text2)', marginBottom:16 }}>10-year projection · {fields.rentGrowth}% annual rent growth · {fields.appreciation}% appreciation</div>
+              <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 16 }}>10-year projection · {fields.rentGrowth}% annual rent growth · {fields.appreciation}% appreciation</div>
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={metrics.chartData} margin={{ top:4, right:60, left:0, bottom:0 }} barGap={2}>
+                <BarChart data={metrics.chartData} margin={{ top: 4, right: 60, left: 0, bottom: 0 }} barGap={2}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.06)" />
-                  <XAxis dataKey="year" tick={{ fontSize:11, fill:'#888' }} />
-                  <YAxis yAxisId="left" tick={{ fontSize:11, fill:'#888' }} tickFormatter={v => '$'+v.toLocaleString()} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize:11, fill:'#888' }} tickFormatter={v => `$${v}K`} />
+                  <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#888' }} />
+                  <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#888' }} tickFormatter={v => '$' + v.toLocaleString()} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#888' }} tickFormatter={v => `$${v}K`} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar yAxisId="left" dataKey="cashflow" name="Monthly CF" fill="#1a5fa8" radius={[3,3,0,0]} />
-                  <Bar yAxisId="left" dataKey="noi" name="NOI" fill="#d4a017" radius={[3,3,0,0]} />
-                  <Bar yAxisId="right" dataKey="equity" name="Equity ($K)" fill="#1a7a4a" radius={[3,3,0,0]} opacity={0.8} />
+                  <Bar yAxisId="left" dataKey="cashflow" name="Monthly CF" fill="#1a5fa8" radius={[3, 3, 0, 0]} />
+                  <Bar yAxisId="left" dataKey="noi" name="NOI" fill="#d4a017" radius={[3, 3, 0, 0]} />
+                  <Bar yAxisId="right" dataKey="equity" name="Equity ($K)" fill="#1a7a4a" radius={[3, 3, 0, 0]} opacity={0.8} />
                 </BarChart>
               </ResponsiveContainer>
-              <div style={{ display:'flex', gap:18, marginTop:8, fontSize:12, color:'var(--text2)' }}>
-                {[['#1a5fa8','Monthly CF'],['#d4a017','NOI'],['#1a7a4a','Equity ($K)']].map(([c,l]) => (
-                  <span key={l} style={{ display:'flex', alignItems:'center', gap:5 }}>
-                    <span style={{ width:10, height:10, borderRadius:2, background:c, display:'inline-block' }} />{l}
+              <div style={{ display: 'flex', gap: 18, marginTop: 8, fontSize: 12, color: 'var(--text2)' }}>
+                {[['#1a5fa8', 'Monthly CF'], ['#d4a017', 'NOI'], ['#1a7a4a', 'Equity ($K)']].map(([c, l]) => (
+                  <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 2, background: c, display: 'inline-block' }} />{l}
                   </span>
                 ))}
               </div>
             </div>
           </div>
         </main>
-       ) : !supaUser ? (
-        <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:40, textAlign:'center', gap:16 }}>
-          <i className="ti ti-briefcase" style={{ fontSize:48, color:'var(--text3)' }} />
-          <div style={{ fontSize:20, fontWeight:700, color:'var(--text)' }}>Save deals to build your portfolio</div>
-          <div style={{ fontSize:14, color:'var(--text2)', maxWidth:300, lineHeight:1.6 }}>Create a free account to save properties, track cash flow, and access Deal Alerts.</div>
-          <button onClick={() => setShowSignup(true)} style={{ padding:'12px 28px', background:'#1a5fa8', color:'#fff', border:'none', borderRadius:8, fontSize:15, fontWeight:600, cursor:'pointer', fontFamily:'var(--font)' }}>Create Free Account</button>
+      ) : !supaUser ? (
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, textAlign: 'center', gap: 16 }}>
+          <i className="ti ti-briefcase" style={{ fontSize: 48, color: 'var(--text3)' }} />
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Save deals to build your portfolio</div>
+          <div style={{ fontSize: 14, color: 'var(--text2)', maxWidth: 300, lineHeight: 1.6 }}>Create a free account to save properties, track cash flow, and access Deal Alerts.</div>
+          <button onClick={() => setShowSignup(true)} style={{ padding: '12px 28px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Create Free Account</button>
         </div>
       ) : (
         <Portfolio
@@ -2550,7 +2556,7 @@ if (recovering) {
           emailAlertsEnabled={emailAlertsEnabled}
           setEmailAlertsEnabled={setEmailAlertsEnabled}
           alertFrequency={alertFrequency}
-          setAlertFrequency={setAlertFrequency} 
+          setAlertFrequency={setAlertFrequency}
           user={supaUser}
         />
       )}
