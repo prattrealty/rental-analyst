@@ -997,6 +997,19 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
   const activePref = prefs || DEFAULT_PREFS
   const hasSetPrefs = prefs !== null
   const [dismissedIds, setDismissedIds] = useState(new Set())
+  // Load previously-dismissed deal IDs from the database on mount
+  useEffect(() => {
+    if (!user?.id) return
+    supabase
+      .from('dismissed_deals')
+      .select('deal_id')
+      .eq('user_id', user.id)
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setDismissedIds(new Set(data.map(row => row.deal_id)))
+        }
+      })
+  }, [user?.id])
 
   // Filter deals against user's buy box
   const matchingDeals = deals.filter(deal => {
