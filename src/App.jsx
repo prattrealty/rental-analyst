@@ -1608,11 +1608,11 @@ export default function App() {
     return () => listener?.subscription?.unsubscribe()
   }, [])
   useEffect(() => {
-    // Skip all data loading + Realtime setup when rendering a shared deal card.
-    if (sharedView) { setAuthLoading(false); return }
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       const user = session?.user ?? null
       setSupaUser(user)
+      // Skip all data loading + Realtime setup when rendering a shared deal card.
+      if (sharedView) { setAuthLoading(false); return }
       if (user) {
         // Load saved properties
         const { data: propData } = await supabase.from('properties').select('data').eq('user_id', user.id).order('created_at', { ascending: true })
@@ -1672,6 +1672,14 @@ export default function App() {
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (sharedView && supaUser) {
+      setFields({ ...DEFAULT_FIELDS, ...sharedView });
+      setSharedView(null);
+    }
+  }, [authLoading, supaUser, sharedView]);
 
   const [tab, setTab] = useState('analyzer')
   const [isMobile, setIsMobile] = useState(false)
@@ -1882,18 +1890,74 @@ export default function App() {
   const totalUnread = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
   const unreadNotifCount = notifications.filter(n => !n.read).length
 
+  const authModal = showSignup && (
+    <SignupModal
+      onClose={() => { setShowSignup(false); setSignupError(''); setAuthInfo('') }}
+      form={signupForm} setForm={setSignupForm}
+      error={signupError} info={authInfo}
+      mode={authMode}
+      setMode={(mode) => { setAuthMode(mode); setSignupError(''); setAuthInfo('') }}
+      onSubmit={async (mode) => {
+        setSignupError(''); setAuthInfo('')
+        if (!signupForm.email.includes('@')) { setSignupError('Please enter a valid email.'); return }
+
+        // ── FORGOT PASSWORD ──
+        if (mode === 'forgot') {
+          const { error: resetErr } = await supabase.auth.resetPasswordForEmail(signupForm.email, {
+            redirectTo: 'https://rental-analyst.com'
+          })
+          if (resetErr) { setSignupError(resetErr.message); return }
+          setAuthInfo('Password reset email sent! Check your inbox.')
+          return
+        }
+
+        // ── SIGN IN ──
+        if (mode === 'signin') {
+          if (signupForm.password.length < 6) { setSignupError('Please enter your password.'); return }
+          const { data, error: signInErr } = await supabase.auth.signInWithPassword({
+            email: signupForm.email,
+            password: signupForm.password,
+          })
+          if (signInErr) { setSignupError(signInErr.message); return }
+          setShowSignup(false)
+          setSupaUser(data.user)
+          showToast('Welcome back!')
+          return
+        }
+
+        // ── SIGN UP ──
+        if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
+        if (signupForm.password.length < 6) { setSignupError('Password must be at least 6 characters.'); return }
+        if (!signupForm.agreed) { setSignupError('Please agree to receive updates.'); return }
+        const { data, error: signupErr } = await supabase.auth.signUp({
+          email: signupForm.email,
+          password: signupForm.password,
+          options: { data: { first_name: signupForm.firstName } }
+        })
+        if (signupErr) { setSignupError(signupErr.message); return }
+        setShowSignup(false)
+        setSupaUser(data.user)
+        showToast(`Welcome, ${signupForm.firstName}! Now save your first property.`)
+      }}
+    />
+  )
+
   // ── SHARED DEAL VIEW: render the read-only card before anything else, so a
   // link visitor never waits on auth and never triggers data loading. ─────────
-  if (sharedView) {
+  if (sharedView && !supaUser) {
     return (
-      <SharedDealCard
-        fields={{ ...DEFAULT_FIELDS, ...sharedView }}
-        onAnalyze={() => {
-          setFields({ ...DEFAULT_FIELDS, ...sharedView })
-          setSharedView(null)
-          window.history.replaceState({}, '', window.location.pathname)
-        }}
-      />
+      <>
+        <SharedDealCard
+          fields={{ ...DEFAULT_FIELDS, ...sharedView }}
+          onAnalyze={() => {
+            setAuthMode('signin');
+            setSignupError('');
+            setAuthInfo('');
+            setShowSignup(true);
+          }}
+        />
+        {authModal}
+      </>
     )
   }
 
@@ -2000,54 +2064,7 @@ export default function App() {
       <a href="#main-content" className="skip-nav">Skip to main content</a>
       {showWalkthrough && <WalkthroughBubble onDone={() => { setShowWalkthrough(false); localStorage.setItem('ra_toured', '1') }} />}
       {showUpgrade && <UpgradeModal onClose={() => setShowUpgrade(false)} trigger={upgradeTrigger} onUpgrade={() => setShowUpgrade(false)} trialStart={trialStart} onStartTrial={startTrial} />}
-      {showSignup && <SignupModal
-        onClose={() => { setShowSignup(false); setSignupError(''); setAuthInfo('') }}
-        form={signupForm} setForm={setSignupForm}
-        error={signupError} info={authInfo}
-        mode={authMode}
-        setMode={(mode) => { setAuthMode(mode); setSignupError(''); setAuthInfo('') }}
-        onSubmit={async (mode) => {
-          setSignupError(''); setAuthInfo('')
-          if (!signupForm.email.includes('@')) { setSignupError('Please enter a valid email.'); return }
-
-          // ── FORGOT PASSWORD ──
-          if (mode === 'forgot') {
-            const { error: resetErr } = await supabase.auth.resetPasswordForEmail(signupForm.email, {
-              redirectTo: 'https://rental-analyst.com'
-            })
-            if (resetErr) { setSignupError(resetErr.message); return }
-            setAuthInfo('Password reset email sent! Check your inbox.')
-            return
-          }
-
-          // ── SIGN IN ──
-          if (mode === 'signin') {
-            if (signupForm.password.length < 6) { setSignupError('Please enter your password.'); return }
-            const { data, error: signInErr } = await supabase.auth.signInWithPassword({
-              email: signupForm.email,
-              password: signupForm.password,
-            })
-            if (signInErr) { setSignupError(signInErr.message); return }
-            setShowSignup(false)
-            setSupaUser(data.user)
-            showToast('Welcome back!')
-            return
-          }
-
-          // ── SIGN UP ──
-          if (!signupForm.firstName) { setSignupError('Please enter your first name.'); return }
-          if (signupForm.password.length < 6) { setSignupError('Password must be at least 6 characters.'); return }
-          if (!signupForm.agreed) { setSignupError('Please agree to receive updates.'); return }
-          const { data, error: signupErr } = await supabase.auth.signUp({
-            email: signupForm.email,
-            password: signupForm.password,
-            options: { data: { first_name: signupForm.firstName } }
-          })
-          if (signupErr) { setSignupError(signupErr.message); return }
-          setShowSignup(false)
-          setSupaUser(data.user)
-          showToast(`Welcome, ${signupForm.firstName}! Now save your first property.`)
-        }} />}
+      {authModal}
 
       <SideDrawer
         open={showDrawer}
