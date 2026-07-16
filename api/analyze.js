@@ -1,24 +1,68 @@
 // /api/analyze.js — Vercel serverless function (Node runtime)
 // Holds the Anthropic API key server-side. NEVER expose the key in the React bundle.
 //
-// Env var required in Vercel project settings:
-//   ANTHROPIC_API_KEY = sk-ant-...
+// Env vars required in Vercel project settings:
+//   ANTHROPIC_API_KEY    = sk-ant-...
+//   VITE_SUPABASE_URL    = https://<project>.supabase.co   (already set)
+//   VITE_SUPABASE_ANON_KEY = ey...                          (already set)
 //
 // Request body (POST, JSON): { metrics: {...}, fields: {...} }
-//   metrics: the object returned by calcMetrics()
-//   fields:  the user's input fields (for address/context only)
+// Request header (required): Authorization: Bearer <supabase access_token>
 //
 // Response (JSON): { call: "Buy"|"Maybe"|"Pass", verdict: "<one short paragraph>" }
+//   or { fallback: true } when the client should show the non-AI template verdict.
 //
-// The model only ever sees the numbers the user entered. The prompt is framed
-// as analysis of those entered numbers, NOT personalized investment advice.
+// GATE: This endpoint costs money (Anthropic tokens). We verify the caller is a
+// real, signed-in Supabase user BEFORE making the paid call. If there is no valid
+// session, we return { fallback: true } so logged-out users still see the template
+// verdict and we spend nothing. (Set HARD_BLOCK = true to 401 instead.)
 
 const MODEL = 'claude-haiku-4-5-20251001'
+const HARD_BLOCK = false // false = fall back to template for logged-out callers; true = return 401
+
+// Verify a Supabase access token by asking Supabase who it belongs to.
+// Returns the user object if valid, or null if missing/invalid/expired.
+async function getVerifiedUser(req) {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
+  if (!supabaseUrl || !anonKey) return null // misconfigured — treat as unverified
+
+  const auth = req.headers['authorization'] || req.headers['Authorization'] || ''
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
+  if (!token) return null
+
+  try {
+    const r = await fetch(supabaseUrl.replace(/\/$/, '') + '/auth/v1/user', {
+      method: 'GET',
+      headers: {
+        apikey: anonKey,
+        authorization: 'Bearer ' + token,
+      },
+    })
+    if (!r.ok) return null
+    const user = await r.json()
+    // A valid response has an id; anything else is not a usable session.
+    return user && user.id ? user : null
+  } catch {
+    return null
+  }
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
+
+  // ---- GATE: require a valid signed-in Supabase user before spending money ----
+  const user = await getVerifiedUser(req)
+  if (!user) {
+    if (HARD_BLOCK) {
+      return res.status(401).json({ error: 'Sign in to get the AI verdict' })
+    }
+    // Gentle default: logged-out callers get the template verdict, no AI spend.
+    return res.status(200).json({ fallback: true })
+  }
+  // ---------------------------------------------------------------------------
 
   const key = process.env.ANTHROPIC_API_KEY
   if (!key) {
