@@ -1704,6 +1704,7 @@ export default function App() {
   const [compsLoading, setCompsLoading] = useState(false)
   const [sliderRent, setSliderRent] = useState(0)
   const toastTimer = useRef(null)
+  const analyzerContentRef = useRef(null)
 
   React.useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 768)
@@ -2096,7 +2097,13 @@ export default function App() {
         {isPro && <span style={{ background: '#4da8ff', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, letterSpacing: '0.5px' }}>PRO</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, alignItems: 'center' }}>
           {['analyzer', 'portfolio'].map(t => (
-            <button key={t} onClick={() => setTab(t)} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer', border: 'none', background: tab === t ? 'rgba(255,255,255,0.15)' : 'transparent', color: tab === t ? '#fff' : 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font)' }}>
+            <button key={t} onClick={() => {
+              setTab(t)
+              if (t === 'analyzer') {
+                document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' })
+                analyzerContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+              }
+            }} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer', border: 'none', background: tab === t ? 'rgba(255,255,255,0.15)' : 'transparent', color: tab === t ? '#fff' : 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font)' }}>
               <i className={`ti ti-${t === 'analyzer' ? 'calculator' : 'briefcase'}`} style={{ fontSize: 14 }} />
               {t.charAt(0).toUpperCase() + t.slice(1)}
               {t === 'portfolio' && totalUnread > 0 && (
@@ -2405,7 +2412,7 @@ export default function App() {
               Annual rates used in 10-year projection. National avg: 2-3% rent growth, 3-4% appreciation.
             </div>
           </div>
-          <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+          <div ref={analyzerContentRef} style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
             <div style={{ background: 'var(--navy)', color: '#fff', borderRadius: 12, padding: '18px 22px', marginBottom: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: '1px', textTransform: 'uppercase' }}>Investment calculator</div>
