@@ -480,9 +480,9 @@ function CompsCard({ comps, loading }) {
 function WalkthroughBubble({ onDone }) {
   const [step, setStep] = React.useState(0)
   const steps = [
-    { icon: 'ti-link', title: 'Paste a Zillow URL', body: "Analyze any property by entering the address — or import from Zillow with Pro.", highlight: 'top-left' },
-    { icon: 'ti-calculator', title: 'Enter the purchase price', body: "RentCast does not have live listing prices yet - just type in the price from Zillow. Everything else calculates instantly.", highlight: 'top-left' },
-    { icon: 'ti-chart-bar', title: 'Read your Deal Score', body: "Your Deal Score (0-100) grades the investment on property fundamentals — cap rate, cash flow, gross yield, and more. Financing-independent, so cash deals score fairly too.", highlight: 'right' },
+    { icon: 'ti-chart-bar', title: 'Know in 30 seconds', body: "Enter any address and get an honest Deal Score, 0-100. Buy, Maybe, or Pass — no spreadsheet, no guessing." },
+    { icon: 'ti-target', title: 'Set your Buy Box', body: "Tell us what you're hunting for once — cash flow, price range, market. Every property gets scored against your criteria, not generic math." },
+    { icon: 'ti-bookmark', title: 'Build your shortlist', body: "Save the deals worth watching and compare them side by side. See which ones actually hold up." }
   ]
   const s = steps[step]
   const isLast = step === steps.length - 1
