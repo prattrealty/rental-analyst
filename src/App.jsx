@@ -2280,8 +2280,8 @@ export default function App() {
               )}
             </div>
             <div style={{ marginBottom: 14 }}>
-              <button onClick={handleSave} aria-label="Save property to portfolio" style={{ width: '100%', padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'var(--font)' }}>
-                <i className="ti ti-bookmark" /> Save property
+              <button onClick={handleSave} aria-label="Save to your account" style={{ width: '100%', padding: '8px 12px', background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: 6, fontSize: 13, cursor: 'pointer', color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'var(--font)' }}>
+                <i className="ti ti-bookmark" /> Save 
                 {!isPro && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>{saved.length}/{FREE_LIMIT}</span>}
               </button>
               {!isPro && !trialActive && saved.length >= FREE_LIMIT && (
