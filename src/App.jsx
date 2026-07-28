@@ -1595,6 +1595,7 @@ export default function App() {
   const [notifications, setNotifications] = useState([])
   const [showNotifDropdown, setShowNotifDropdown] = useState(false)
   const [refCode] = useState(() => new URLSearchParams(window.location.search).get('ref') || null)
+  const [addressParam, setAddressParam] = useState(() => new URLSearchParams(window.location.search).get('address') || null)
   const [showDrawer, setShowDrawer] = useState(false)
   // Catch password-recovery links. Supabase fires PASSWORD_RECOVERY when a user
   // arrives via a reset email; we flip into the set-new-password screen.
@@ -1886,6 +1887,15 @@ export default function App() {
     setImportAddress(address)
     await runImport(address)
   }
+
+  // Deep-link from an alert email (?address=...): pre-fill and auto-run the
+  // same import/analysis flow as the "Analyze This Property" button.
+  useEffect(() => {
+    if (authLoading || !addressParam) return
+    setFields(f => ({ ...f, address: addressParam }))
+    runImport(addressParam)
+    setAddressParam(null)
+  }, [authLoading, addressParam])
 
   const capColor = metrics.capRate >= 8 ? 'var(--green)' : metrics.capRate >= 5 ? 'var(--amber)' : 'var(--red)'
   const totalUnread = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
