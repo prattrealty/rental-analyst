@@ -76,6 +76,9 @@ function dealCardHtml(deal: { address: string, city: string, state: string, pric
         <span style="font-size: 24px; font-weight: 800; color: #C9A84C;">${metrics.dealScore}</span>
         <span style="font-size: 14px; color: rgba(255,255,255,0.7);"> / 100 Deal Score</span>
       </div>
+      <div style="text-align: center; margin-top: 16px;">
+        <a href="https://www.rental-analyst.com/?address=${encodeURIComponent(`${address}, ${city}, ${state}`)}" style="color: #1B3A6B; font-weight: 700; font-size: 13px; text-decoration: none;">Analyze This Deal →</a>
+      </div>
     </div>
   `
 }
