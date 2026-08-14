@@ -14,6 +14,7 @@ const fmtK = (n) => n >= 1000 ? `$${Math.round(n / 1000)}K` : fmt(n)
 const fmtPct = (n) => isNaN(n) ? '0.00%' : `${n.toFixed(2)}%`
 const FREE_LIMIT = 2
 const PRO_PRICE = 9.99
+const DEFAULT_PREFS = { min_score: 0, max_price: 999999999, min_cashflow: 0, min_cap_rate: 0, min_coc: 0, property_type: 'any' }
 
 // ── SHARE LINK ENCODE / DECODE ──────────────────────────────────────────────
 const encodeDeal = (fields) => {
@@ -992,8 +993,7 @@ function BuyBoxPanel({ prefs, onSave, emailAlertsEnabled, setEmailAlertsEnabled,
   )
 }
 
-function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency, user }) {
-  const DEFAULT_PREFS = { min_score: 0, max_price: 999999999, min_cashflow: 0, min_cap_rate: 0, min_coc: 0, property_type: 'any' }
+function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, user }) {
   const activePref = prefs || DEFAULT_PREFS
   const hasSetPrefs = prefs !== null
   const [dismissedIds, setDismissedIds] = useState(new Set())
@@ -1034,11 +1034,10 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-      <BuyBoxPanel prefs={activePref} onSave={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} user={user} />
       {!hasSetPrefs && (
         <div style={{ background: '#f0f7ff', border: '1px solid #c0d8f0', borderRadius: 10, padding: '14px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
           <i className="ti ti-info-circle" style={{ fontSize: 18, color: '#1a5fa8', flexShrink: 0 }} />
-          <div style={{ fontSize: 13, color: '#0f2744' }}>Set your buy box above and hit <strong>Save</strong> to see matching deals.</div>
+          <div style={{ fontSize: 13, color: '#0f2744' }}>Set your buy box in the <strong>Buy Box</strong> tab to see matching deals.</div>
         </div>
       )}
 
@@ -1148,7 +1147,7 @@ function DealAlerts({ deals, viewedIds, onLoadDeal, onMarkViewed, prefs, onSaveP
 }
 
 // ── PORTFOLIO COMPONENT ────────────────────────────────────────────────────
-function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealIds, onLoadDeal, onMarkViewed, prefs, onSavePrefs, emailAlertsEnabled, setEmailAlertsEnabled, alertFrequency, setAlertFrequency, user }) {
+function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealIds, onLoadDeal, onMarkViewed, prefs, user }) {
   const [portfolioTab, setPortfolioTab] = useState('properties')
   const unreadCount = dealAlerts.filter(d => !viewedDealIds.has(d.id)).length
   const totalCF = saved.reduce((s, p) => s + p.metrics.cashflow, 0)
@@ -1197,7 +1196,7 @@ function Portfolio({ saved, onDelete, isPro, onUpgrade, dealAlerts, viewedDealId
       )}
 
       {portfolioTab === 'alerts' && isPro && (
-        <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} prefs={prefs} onSavePrefs={onSavePrefs} emailAlertsEnabled={emailAlertsEnabled} setEmailAlertsEnabled={setEmailAlertsEnabled} alertFrequency={alertFrequency} setAlertFrequency={setAlertFrequency} user={user} />
+        <DealAlerts deals={dealAlerts} viewedIds={viewedDealIds} onLoadDeal={onLoadDeal} onMarkViewed={onMarkViewed} prefs={prefs} user={user} />
       )}
 
       {portfolioTab === 'properties' && (
@@ -2106,20 +2105,24 @@ export default function App() {
         </div>
         {isPro && <span style={{ background: '#4da8ff', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, letterSpacing: '0.5px' }}>PRO</span>}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, alignItems: 'center' }}>
-          {['analyzer', 'portfolio'].map(t => (
-            <button key={t} onClick={() => {
-              setTab(t)
-              if (t === 'analyzer') {
+          {[
+            { key: 'analyzer', label: 'Analyzer', icon: 'ti-calculator' },
+            { key: 'buybox', label: 'Buy Box', icon: 'ti-target' },
+            { key: 'portfolio', label: 'Portfolio', icon: 'ti-briefcase' },
+          ].map(t => (
+            <button key={t.key} onClick={() => {
+              setTab(t.key)
+              if (t.key === 'analyzer') {
                 document.getElementById('main-content')?.scrollTo({ top: 0, behavior: 'smooth' })
                 analyzerContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
               }
-            }} aria-label={t === 'analyzer' ? 'Analyzer tab' : 'Portfolio tab'} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer', border: 'none', background: tab === t ? 'rgba(255,255,255,0.15)' : 'transparent', color: tab === t ? '#fff' : 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font)' }}>
-              <i className={`ti ti-${t === 'analyzer' ? 'calculator' : 'briefcase'}`} style={{ fontSize: 14 }} />
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-              {t === 'portfolio' && totalUnread > 0 && (
+            }} aria-label={`${t.label} tab`} style={{ padding: '6px 14px', borderRadius: 6, fontSize: 13, cursor: 'pointer', border: 'none', background: tab === t.key ? 'rgba(255,255,255,0.15)' : 'transparent', color: tab === t.key ? '#fff' : 'rgba(255,255,255,0.55)', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font)' }}>
+              <i className={`ti ${t.icon}`} style={{ fontSize: 14 }} />
+              {t.label}
+              {t.key === 'portfolio' && totalUnread > 0 && (
                 <span style={{ background: '#a32d2d', color: '#fff', borderRadius: 10, fontSize: 10, padding: '0 6px', fontWeight: 700 }}>{totalUnread}</span>
               )}
-              {t === 'portfolio' && totalUnread === 0 && saved.length > 0 && (
+              {t.key === 'portfolio' && totalUnread === 0 && saved.length > 0 && (
                 <span style={{ background: '#4da8ff', color: '#fff', borderRadius: 10, fontSize: 10, padding: '0 6px', fontWeight: 600 }}>{saved.length}</span>
               )}
             </button>
@@ -2588,6 +2591,40 @@ export default function App() {
           <div style={{ fontSize: 14, color: 'var(--text2)', maxWidth: 300, lineHeight: 1.6 }}>Create a free account to save properties, track cash flow, and access Deal Alerts.</div>
           <button onClick={() => setShowSignup(true)} style={{ padding: '12px 28px', background: '#1a5fa8', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'var(--font)' }}>Create Free Account</button>
         </div>
+      ) : tab === 'buybox' ? (
+        isPro ? (
+          <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
+            <BuyBoxPanel
+              prefs={userPrefs || DEFAULT_PREFS}
+              onSave={handleSavePrefs}
+              emailAlertsEnabled={emailAlertsEnabled}
+              setEmailAlertsEnabled={setEmailAlertsEnabled}
+              alertFrequency={alertFrequency}
+              setAlertFrequency={setAlertFrequency}
+              user={supaUser}
+            />
+          </div>
+        ) : (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, textAlign: 'center', gap: 16 }}>
+            <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(201,168,76,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="ti ti-target" style={{ fontSize: 32, color: '#C9A84C' }} />
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>Buy Box — Pro Feature</div>
+            <div style={{ fontSize: 14, color: 'var(--text2)', maxWidth: 340, lineHeight: 1.6 }}>
+              Tell us exactly what you're hunting for — markets, price range, cash-on-cash return, property type — and we scan the market daily and email you the moment a new listing matches. Set it once, stop manually searching.
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%', maxWidth: 280 }}>
+              {['Automated deal matching', 'Custom price & return thresholds', 'Zip code / market filtering', 'Daily email alerts'].map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text2)' }}>
+                  <i className="ti ti-check" style={{ color: '#C9A84C', fontSize: 14 }} /> {f}
+                </div>
+              ))}
+            </div>
+            <button onClick={() => openUpgrade('portfolio')} style={{ padding: '12px 28px', background: 'linear-gradient(135deg, #C9A84C, #b8943d)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font)' }}>
+              Upgrade to Pro — $9.99/mo
+            </button>
+          </div>
+        )
       ) : (
         <Portfolio
           saved={saved}
@@ -2599,11 +2636,6 @@ export default function App() {
           onLoadDeal={handleLoadDeal}
           onMarkViewed={handleMarkViewed}
           prefs={userPrefs}
-          onSavePrefs={handleSavePrefs}
-          emailAlertsEnabled={emailAlertsEnabled}
-          setEmailAlertsEnabled={setEmailAlertsEnabled}
-          alertFrequency={alertFrequency}
-          setAlertFrequency={setAlertFrequency}
           user={supaUser}
         />
       )}
