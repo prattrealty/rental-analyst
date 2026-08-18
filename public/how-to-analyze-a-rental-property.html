@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ===== SEO META (edit these if your CMS handles them separately) ===== -->
+<title>How to Analyze a Rental Property (Step-by-Step Guide for 2026)</title>
+<meta name="description" content="A working broker's step-by-step guide to analyzing a rental property: cash flow, cap rate, cash-on-cash return, and the numbers that actually matter before you buy.">
+<link rel="canonical" href="https://www.rental-analyst.com/how-to-analyze-a-rental-property">
+<meta name="robots" content="index, follow, max-image-preview:large">
+
+<!-- Open Graph -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="How to Analyze a Rental Property (Step-by-Step Guide for 2026)">
+<meta property="og:description" content="A working broker's step-by-step guide to analyzing a rental property: cash flow, cap rate, cash-on-cash return, and the numbers that actually matter before you buy.">
+<meta property="og:url" content="https://www.rental-analyst.com/how-to-analyze-a-rental-property">
+
+<!-- ===== Structured data: Article + FAQ (helps Google understand & can win rich results) ===== -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "How to Analyze a Rental Property (Step-by-Step Guide)",
+  "description": "A working broker's step-by-step guide to analyzing a rental property: cash flow, cap rate, cash-on-cash return, and the numbers that actually matter before you buy.",
+  "author": { "@type": "Person", "name": "Scott Pratt", "jobTitle": "Licensed Georgia Real Estate Broker" },
+  "publisher": { "@type": "Organization", "name": "Rental Analyst" },
+  "mainEntityOfPage": "https://www.rental-analyst.com/how-to-analyze-a-rental-property"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is a good cash-on-cash return on a rental property?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Most investors look for a cash-on-cash return in the 8 to 12 percent range, though what counts as good depends on your market, financing, and goals. A lower return may be acceptable in an appreciating area, while cash-flow-focused investors often want double digits." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the 1% rule in real estate?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The 1% rule is a quick screen that says a rental's monthly rent should be at least 1% of its purchase price. It is only a first-glance filter, not a substitute for a full cash-flow analysis." }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I calculate cash flow on a rental property?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Cash flow equals gross rental income minus all operating expenses and minus your mortgage payment. Operating expenses include taxes, insurance, management, maintenance, and vacancy. What remains each month is your cash flow." }
+    }
+  ]
+}
+</script>
+
+<style>
+  :root{
+    --ink:#0f2744;        /* deep navy — matches rental-analyst.com theme */
+    --ink-soft:#3a4a5f;
+    --accent:#1f6feb;     /* the tool's blue */
+    --gold:#C9A84C;
+    --paper:#ffffff;
+    --wash:#f5f7fa;
+    --line:#e3e8ef;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink-soft);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.7; font-size:18px;
+  }
+  .container{max-width:740px; margin:0 auto; padding:0 22px;}
+
+  /* Header */
+  header.masthead{border-bottom:1px solid var(--line); padding:18px 0;}
+  .masthead-inner{max-width:740px; margin:0 auto; padding:0 22px; display:flex; align-items:center; justify-content:space-between;}
+  .brand{font-weight:800; color:var(--ink); font-size:19px; letter-spacing:-.3px; text-decoration:none;}
+  .brand span{color:var(--accent);}
+  .nav-cta{font-size:14px; font-weight:600; color:#fff; background:var(--accent); padding:8px 16px; border-radius:8px; text-decoration:none;}
+
+  /* Article head */
+  .eyebrow{color:var(--accent); font-weight:700; font-size:13px; letter-spacing:2px; text-transform:uppercase; margin:44px 0 14px;}
+  h1{color:var(--ink); font-size:40px; line-height:1.15; letter-spacing:-1px; margin:0 0 18px; font-weight:800;}
+  .byline{font-size:15px; color:#7a8699; margin:0 0 8px;}
+  .byline strong{color:var(--ink-soft);}
+  .dek{font-size:20px; color:var(--ink-soft); border-left:3px solid var(--gold); padding-left:16px; margin:26px 0 36px;}
+
+  h2{color:var(--ink); font-size:27px; line-height:1.25; letter-spacing:-.5px; margin:44px 0 14px; font-weight:800;}
+  h3{color:var(--ink); font-size:21px; margin:30px 0 10px; font-weight:700;}
+  p{margin:0 0 18px;}
+  a{color:var(--accent);}
+  strong{color:var(--ink);}
+
+  .step-num{display:inline-block; background:var(--ink); color:#fff; font-size:14px; font-weight:800; width:30px; height:30px; line-height:30px; text-align:center; border-radius:8px; margin-right:10px; vertical-align:middle;}
+
+  ul.clean{margin:0 0 20px; padding-left:22px;}
+  ul.clean li{margin-bottom:9px;}
+
+  .callout{
+    background:var(--wash); border:1px solid var(--line); border-radius:12px;
+    padding:22px 24px; margin:30px 0;
+  }
+  .callout p:last-child{margin:0;}
+  .callout .label{font-size:12px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); margin-bottom:8px;}
+
+  .formula{
+    background:var(--ink); color:#e9eef5; border-radius:12px; padding:20px 24px; margin:22px 0;
+    font-size:17px; line-height:1.6;
+  }
+  .formula strong{color:#fff;}
+  .formula .eq{color:var(--gold); font-weight:700;}
+
+  /* The tool CTA — the whole point */
+  .tool-cta{
+    background:linear-gradient(135deg,#0f2744 0%, #1a3a5c 100%);
+    border-radius:16px; padding:34px 30px; margin:44px 0; text-align:center; color:#fff;
+  }
+  .tool-cta h3{color:#fff; font-size:24px; margin:0 0 10px;}
+  .tool-cta p{color:#cdd8e6; margin:0 0 22px; font-size:17px;}
+  .tool-cta a{
+    display:inline-block; background:var(--accent); color:#fff; font-weight:700; font-size:17px;
+    padding:14px 30px; border-radius:10px; text-decoration:none;
+  }
+
+  .faq h3{margin-top:26px;}
+  .author-box{border-top:1px solid var(--line); margin-top:50px; padding-top:26px; display:flex; gap:16px; align-items:flex-start;}
+  .author-box .who{font-weight:800; color:var(--ink);}
+  .author-box p{font-size:15px; color:#7a8699; margin:4px 0 0;}
+
+  footer{border-top:1px solid var(--line); margin-top:50px; padding:26px 0 50px; text-align:center; color:#98a2b3; font-size:14px;}
+  footer a{color:#98a2b3;}
+
+  @media (max-width:560px){
+    h1{font-size:31px;} h2{font-size:23px;} body{font-size:17px;}
+    .dek{font-size:18px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <a class="brand" href="https://www.rental-analyst.com">Rental<span>Analyst</span></a>
+    <a class="nav-cta" href="https://www.rental-analyst.com">Analyze a Property</a>
+  </div>
+</header>
+
+<article class="container">
+
+  <p class="eyebrow">Investor Guide</p>
+  <h1>How to Analyze a Rental Property: A Step-by-Step Guide</h1>
+  <p class="byline">By <strong>Scott Pratt</strong> · Licensed Georgia Real Estate Broker · 16 years in the business</p>
+
+  <p class="dek">Buying a rental on gut feeling is how people lose money in real estate. The good news: a rental property is just a set of numbers, and once you know which numbers to run, a good deal separates itself from a bad one in about ten minutes.</p>
+
+  <p>I've spent sixteen years in real estate, and I've watched plenty of first-time investors fall in love with a house instead of a <em>deal</em>. A rental property doesn't care whether the kitchen is charming. It cares whether the rent covers the costs with enough left over to make the risk worth it. This guide walks through exactly how to figure that out — the same way I'd analyze a property before advising a client to buy it.</p>
+
+  <p>We'll cover the four numbers that actually matter — cash flow, cap rate, cash-on-cash return, and a couple of quick screens — and how they fit together. By the end you'll be able to look at any listing and know, roughly, whether it's worth a closer look.</p>
+
+  <h2><span class="step-num">1</span>Start with the income</h2>
+  <p>Every rental analysis begins with one question: <strong>what will this property actually rent for?</strong> Not what the seller says, not what the listing implies — what a real tenant will pay in today's market.</p>
+  <p>Pull comparable rentals in the same area, similar in size, condition, and bedroom count. Look at what's currently listed and, if you can, what recently leased. Be honest and slightly conservative here; every dollar you overestimate in rent is a dollar of imaginary profit you'll be disappointed to miss later.</p>
+  <p>That figure — realistic monthly market rent — is your <strong>gross rental income</strong>. It's the foundation everything else sits on, so it's worth getting right.</p>
+
+  <h2><span class="step-num">2</span>Subtract the real expenses</h2>
+  <p>This is where most beginner analyses go wrong. People count the mortgage and maybe taxes, then call whatever's left "profit." Real operating expenses are bigger than that, and leaving them out is how a "cash-flowing" property quietly bleeds money.</p>
+  <p>Here's what actually comes out of the rent each month:</p>
+  <ul class="clean">
+    <li><strong>Property taxes</strong> — pull the actual county figure, don't guess.</li>
+    <li><strong>Insurance</strong> — landlord policies cost more than owner-occupied.</li>
+    <li><strong>Property management</strong> — typically 8–10% of rent, even if you plan to self-manage (your time has value, and you may not always manage it yourself).</li>
+    <li><strong>Maintenance and repairs</strong> — budget roughly 5–10% of rent; older homes lean higher.</li>
+    <li><strong>Vacancy</strong> — no property is rented 100% of the time. Set aside 5–8% for the months between tenants.</li>
+    <li><strong>Capital expenditures (CapEx)</strong> — the roof, HVAC, and water heater will eventually need replacing. Reserve for it now so it doesn't wipe out a year of profit later.</li>
+  </ul>
+  <p>Add those up and you have your <strong>total operating expenses</strong>. A useful rule of thumb: operating expenses (excluding the mortgage) often run around 40–50% of gross rent. If your analysis shows expenses far below that, you've probably forgotten something.</p>
+
+  <div class="callout">
+    <p class="label">Broker's tip</p>
+    <p>The expenses people skip — vacancy, CapEx, and management — are exactly the ones that turn a "great deal" into a break-even headache. Include them from the start. A deal that only works when you ignore real costs isn't a deal.</p>
+  </div>
+
+  <h2><span class="step-num">3</span>Calculate cash flow</h2>
+  <p><strong>Cash flow</strong> is the money left in your pocket each month after everything is paid — including the mortgage. It's the single most important number for most rental investors, because it tells you whether the property feeds you or you feed it.</p>
+
+  <div class="formula">
+    <strong>Monthly Cash Flow</strong> <span class="eq">=</span> Gross Rent <span class="eq">−</span> Operating Expenses <span class="eq">−</span> Mortgage Payment
+  </div>
+
+  <p>If that number is positive, the property pays you every month to own it. If it's negative, you're subsidizing it and betting entirely on appreciation — a much riskier position, especially in a higher-rate environment where financing eats more of the rent.</p>
+
+  <h2><span class="step-num">4</span>Measure the return: cap rate and cash-on-cash</h2>
+  <p>Cash flow tells you <em>how much</em> you make. Return metrics tell you <em>how good</em> that is relative to what you put in. Two matter most.</p>
+
+  <h3>Cap rate (capitalization rate)</h3>
+  <p>Cap rate measures the property's return independent of financing — useful for comparing one property to another on equal footing.</p>
+  <div class="formula">
+    <strong>Cap Rate</strong> <span class="eq">=</span> Net Operating Income (annual) <span class="eq">÷</span> Purchase Price
+  </div>
+  <p>Net operating income (NOI) is your annual rent minus annual operating expenses, <em>before</em> the mortgage. A property renting for enough to produce, say, $24,000 NOI on a $300,000 purchase has an 8% cap rate. Whether that's good depends heavily on your market — strong markets trade at lower cap rates because buyers accept less return for more stability.</p>
+
+  <h3>Cash-on-cash return</h3>
+  <p>This is the one I care about most as an investor, because it answers the real question: <strong>what return am I getting on the actual cash I put in?</strong></p>
+  <div class="formula">
+    <strong>Cash-on-Cash Return</strong> <span class="eq">=</span> Annual Cash Flow <span class="eq">÷</span> Total Cash Invested
+  </div>
+  <p>Total cash invested is your down payment plus closing costs plus any upfront repairs. If you put $70,000 into a deal and it produces $7,000 of annual cash flow, that's a 10% cash-on-cash return. Most investors target somewhere in the <strong>8–12% range</strong>, though cash-flow-focused buyers push for higher and appreciation-focused buyers accept lower.</p>
+
+  <div class="tool-cta">
+    <h3>Skip the spreadsheet</h3>
+    <p>Plug in a property's numbers and Rental Analyst calculates cash flow, cap rate, and cash-on-cash return instantly — so you can screen a deal in under a minute.</p>
+    <a href="https://www.rental-analyst.com">Analyze a Property Free →</a>
+  </div>
+
+  <h2>Two quick screens before you dig in</h2>
+  <p>Before running a full analysis on every listing, two fast filters help you weed out obvious non-starters:</p>
+  <h3>The 1% rule</h3>
+  <p>Monthly rent should be at least 1% of the purchase price. A $200,000 property should rent for around $2,000/month to be worth a closer look. It's a rough screen, not a verdict — plenty of good deals miss it and plenty of bad ones pass it — but it's a fast first cut.</p>
+  <h3>The 50% rule</h3>
+  <p>Expect operating expenses (excluding mortgage) to consume about half of gross rent. It's a sanity check: if your detailed expense estimate comes in far under 50%, go back and find what you missed.</p>
+
+  <h2>Putting it all together</h2>
+  <p>A complete rental analysis flows in order: estimate realistic rent, subtract every real expense, calculate monthly cash flow, then measure the return with cap rate and cash-on-cash. Run those four steps and a good deal announces itself — and just as importantly, a bad one stops wasting your time.</p>
+  <p>The math isn't complicated. The discipline is in being honest about the inputs — real rents, real expenses, real reserves. Do that consistently and you'll make better decisions than most investors, who buy on optimism and hope the numbers catch up.</p>
+
+  <div class="tool-cta">
+    <h3>Run your first analysis now</h3>
+    <p>Rental Analyst does every calculation in this guide for you. Enter a property, see the numbers, decide with confidence.</p>
+    <a href="https://www.rental-analyst.com">Get Started Free →</a>
+  </div>
+
+  <section class="faq">
+    <h2>Frequently asked questions</h2>
+    <h3>What is a good cash-on-cash return on a rental property?</h3>
+    <p>Most investors look for 8–12%, though what counts as "good" depends on your market, financing, and goals. Cash-flow-focused investors often want double digits; buyers in strong appreciation markets may accept less.</p>
+    <h3>What is the 1% rule in real estate?</h3>
+    <p>It says a rental's monthly rent should be at least 1% of its purchase price — a quick first-glance screen, not a substitute for a full cash-flow analysis.</p>
+    <h3>How do I calculate cash flow on a rental property?</h3>
+    <p>Cash flow equals gross rental income minus all operating expenses minus your mortgage payment. Include taxes, insurance, management, maintenance, vacancy, and CapEx reserves — not just the mortgage.</p>
+    <h3>What's the difference between cap rate and cash-on-cash return?</h3>
+    <p>Cap rate measures the property's return based on purchase price, ignoring financing. Cash-on-cash measures the return on the actual cash you invested, including your loan. Cap rate compares properties; cash-on-cash measures your real yield.</p>
+  </section>
+
+  <div class="author-box">
+    <div>
+      <div class="who">Scott Pratt</div>
+      <p>Scott is a licensed Georgia real estate broker with 16 years of experience and the creator of Rental Analyst, a tool that helps investors analyze rental properties in seconds.</p>
+    </div>
+  </div>
+
+</article>
+
+<footer>
+  <div class="container">
+    © 2026 Rental Analyst · <a href="https://www.rental-analyst.com">rental-analyst.com</a> · Built by a working broker, for real investors.
+  </div>
+</footer>
+
+</body>
+</html>
