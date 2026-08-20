@@ -1488,6 +1488,14 @@ function SideDrawer({ open, onClose, user, isPro, onUpgrade, onSignOut, onSignIn
             localStorage.removeItem('ra_toured')
             window.location.reload()
           }} />
+          <a href="/how-to-analyze-a-rental-property" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, marginBottom: 2, textDecoration: 'none' }}>
+            <i className="ti ti-file-text" style={{ fontSize: 16, flexShrink: 0, color: '#1a5fa8' }} />
+            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>How to Analyze a Rental Property</div>
+          </a>
+          <a href="/what-is-a-good-cap-rate" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, marginBottom: 2, textDecoration: 'none' }}>
+            <i className="ti ti-file-text" style={{ fontSize: 16, flexShrink: 0, color: '#1a5fa8' }} />
+            <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>What Is a Good Cap Rate?</div>
+          </a>
           <DrawerItem icon="ti-mail" label="Send Feedback" onClick={() => window.open('mailto:paroffice@gmail.com?subject=Rental Analyst Feedback', '_blank')} />
         </DrawerSection>
 
@@ -2547,6 +2555,12 @@ export default function App() {
                   <a href="mailto:paroffice@gmail.com" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: '#1a5fa8', borderRadius: 6, fontSize: 12, color: '#fff', textDecoration: 'none', fontWeight: 500 }}>
                     <i className="ti ti-mail" style={{ fontSize: 13 }} /> Email Scott
                   </a>
+                </div>
+                <div style={{ marginTop: 10, fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
+                  Free guides:{' '}
+                  <a href="/how-to-analyze-a-rental-property" style={{ color: '#8fc4ff' }}>How to Analyze a Rental Property</a>
+                  {' · '}
+                  <a href="/what-is-a-good-cap-rate" style={{ color: '#8fc4ff' }}>What Is a Good Cap Rate?</a>
                 </div>
               </div>
             </div>
