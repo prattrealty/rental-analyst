@@ -3,6 +3,7 @@
   "framework": "vite",
   "rewrites": [
     { "source": "/how-to-analyze-a-rental-property", "destination": "/how-to-analyze-a-rental-property.html" },
-    { "source": "/what-is-a-good-cap-rate", "destination": "/what-is-a-good-cap-rate.html" }
+    { "source": "/what-is-a-good-cap-rate", "destination": "/what-is-a-good-cap-rate.html" },
+    { "source": "/home-value", "destination": "/home-value.html" }
   ]
 }
